@@ -26,22 +26,68 @@
     "appId": "it.allineatorisorridi.assistente-controlli",
     "productName": "Assistente controlli",
     "artifactName": "assistente-controlli-${version}-${os}-${arch}.${ext}",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["electron/**", "package.json"],
-    "extraResources": [
-      { "from": "vendor/backend", "to": "backend" },
-      { "from": "vendor/codex", "to": "codex" }
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "package.json"
     ],
-    "publish": [{ "provider": "github", "owner": "Prot10", "repo": "assistente-controlli-sorridi", "releaseType": "release" }],
+    "extraResources": [
+      {
+        "from": "vendor/backend",
+        "to": "backend"
+      },
+      {
+        "from": "vendor/codex",
+        "to": "codex"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Prot10",
+        "repo": "assistente-controlli-sorridi",
+        "releaseType": "release"
+      }
+    ],
     "mac": {
-      "target": [{ "target": "dmg", "arch": ["arm64"] }, { "target": "zip", "arch": ["arm64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
       "category": "public.app-category.medical",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "notarize": true
+      "notarize": true,
+      "sign": "./scripts/firma-mac.js"
     },
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
-    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "Assistente controlli" }
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "Assistente controlli"
+    }
   }
 }

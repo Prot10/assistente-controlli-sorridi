@@ -32,5 +32,5 @@ fi
 npm run backend
 npm run codex
 npx electron-builder --mac --publish always
-xcrun stapler validate "dist/assistente-controlli-${VERSIONE#v}-mac-arm64.dmg"
+xcrun stapler validate "dist/mac-arm64/Assistente controlli.app"
 echo "Mac pubblicato. Windows: gh run watch --repo Prot10/assistente-controlli-sorridi"

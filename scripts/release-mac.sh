@@ -33,6 +33,17 @@ fi
 
 npm run backend
 npm run codex
-npx electron-builder --mac --publish always
+npx electron-builder --mac --publish never
 xcrun stapler validate "dist/mac-arm64/Assistente controlli.app"
+
+# electron-builder firma e notarizza solo l'app. Un DMG scaricato senza firma e senza ticket viene rifiutato da
+# Gatekeeper, e macOS lo dice "danneggiato": il DMG si firma, si notarizza e si graffa qui, prima di caricarlo.
+DMG="dist/assistente-controlli-${VERSIONE#v}-mac-arm64.dmg"
+codesign --sign "$CSC_NAME" --timestamp --force "$DMG"
+xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_PASSWORD" --wait
+xcrun stapler staple "$DMG"
+spctl -a -t open --context context:primary-signature -v "$DMG"
+
+ZIP="dist/assistente-controlli-${VERSIONE#v}-mac-arm64.zip"
+gh release upload "$VERSIONE" --clobber "$DMG" "$ZIP" "$ZIP.blockmap" dist/latest-mac.yml
 echo "Mac pubblicato. Windows: gh run watch --repo Prot10/assistente-controlli-sorridi"

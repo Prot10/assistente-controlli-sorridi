@@ -1,7 +1,7 @@
 {
   "name": "assistente-controlli",
   "productName": "Assistente controlli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Assistente per la linea WhatsApp di controllo di Allineatori Sorridi",
   "author": "Andrea Protani",
   "license": "MIT",
@@ -88,6 +88,9 @@
       "oneClick": true,
       "perMachine": false,
       "shortcutName": "Assistente controlli"
+    },
+    "dmg": {
+      "writeUpdateInfo": false
     }
   }
 }

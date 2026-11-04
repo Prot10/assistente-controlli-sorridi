@@ -4,15 +4,16 @@
 #   2. app per Mac costruita qui, firmata con il Developer ID e notarizzata, caricata nella stessa release.
 # Le app installate trovano la nuova versione da sole (electron-updater legge latest.yml e latest-mac.yml).
 #
-# Serve un file .env (escluso da git) con APPLE_ID, APPLE_PASSWORD (password specifica per app) e APPLE_TEAM_ID.
-# Le password restano nell'ambiente del processo: questo script non le stampa.
+# Serve un file con APPLE_ID, APPLE_PASSWORD (password specifica per app) e APPLE_TEAM_ID: .env (escluso da git)
+# oppure quello indicato in ENV_FILE. Le password restano nell'ambiente del processo: questo script non le stampa.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSIONE="v$(node -p 'require("./package.json").version')"
 [ -z "$(git status --porcelain)" ] || { echo "Ci sono modifiche non committate: committa prima di pubblicare."; exit 1; }
-[ -f .env ] || { echo "Manca .env con le credenziali Apple."; exit 1; }
-set -a; source .env; set +a
+ENV_FILE="${ENV_FILE:-.env}"
+[ -f "$ENV_FILE" ] || { echo "Manca $ENV_FILE con le credenziali Apple."; exit 1; }
+set -a; source "$ENV_FILE"; set +a
 export APPLE_APP_SPECIFIC_PASSWORD="$APPLE_PASSWORD"
 export GH_TOKEN="$(gh auth token --user Prot10)"
 export PYTHON="${PYTHON:-.venv/bin/python}"

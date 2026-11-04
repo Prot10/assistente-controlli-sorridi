@@ -84,7 +84,7 @@ python3 backend/assistente.py
 
 ### Rilascio
 1. Aumentare `version` in `package.json` e committare.
-2. Su un Mac con il Developer ID nel portachiavi e un file `.env` con `APPLE_ID`, `APPLE_PASSWORD` (password specifica per app) e `APPLE_TEAM_ID`:
+2. Su un Mac con il Developer ID nel portachiavi e un file `.env` (oppure il percorso in `ENV_FILE`) con `APPLE_ID`, `APPLE_PASSWORD` (password specifica per app) e `APPLE_TEAM_ID`:
    ```bash
    npm run release:mac
    ```

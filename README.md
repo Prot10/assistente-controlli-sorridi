@@ -9,6 +9,8 @@ App desktop per Windows e Mac al servizio della linea WhatsApp di controllo di A
 L'operatore la invia così com'è, la modifica oppure la scarta. Tutto resta nello storico. Quando lo storico mostra che le proposte vengono accettate senza modifiche, si può attivare l'invio automatico per i casi sicuri.
 
 ## Installazione
+In breve, per chi la usa: [docs/guida-rapida.md](docs/guida-rapida.md).
+
 Scaricare l'ultima versione dalla pagina [Releases](https://github.com/Prot10/assistente-controlli-sorridi/releases/latest):
 - **Windows**: `assistente-controlli-…-win-x64.exe`. L'installer non è firmato: Windows può mostrare "Windows ha protetto il PC"; scegliere "Ulteriori informazioni", poi "Esegui comunque".
 - **Mac** (Apple Silicon): `assistente-controlli-…-mac-arm64.dmg`, firmato e notarizzato.

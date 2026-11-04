@@ -20,12 +20,14 @@ export PYTHON="${PYTHON:-.venv/bin/python}"
 # Nel portachiavi ci sono due Developer ID con lo stesso nome: si sceglie per impronta (la stessa di Kosmico).
 export CSC_NAME="${CSC_NAME:-E1513974CD376A7B5355D3EB3E90DDFED265943B}"
 
-if ! git rev-parse -q --verify "refs/tags/$VERSIONE" >/dev/null; then
-  PRECEDENTE="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+# Ogni passo si può ripetere: se lo script si ferma a metà, rilanciato riprende.
+git rev-parse -q --verify "refs/tags/$VERSIONE" >/dev/null || git tag -a "$VERSIONE" -m "Assistente controlli $VERSIONE"
+[ "$(git rev-list -n1 "$VERSIONE")" = "$(git rev-parse HEAD)" ] || { echo "$VERSIONE non punta a HEAD: aumenta la versione."; exit 1; }
+git push origin HEAD "refs/tags/$VERSIONE"
+if ! gh release view "$VERSIONE" >/dev/null 2>&1; then
+  PRECEDENTE="$(git describe --tags --abbrev=0 "$VERSIONE^" 2>/dev/null || true)"
   NOTE="$(mktemp)"
-  git log --format='- %s' ${PRECEDENTE:+$PRECEDENTE..}HEAD > "$NOTE"
-  git tag -a "$VERSIONE" -m "Assistente controlli $VERSIONE"
-  git push origin HEAD "$VERSIONE"
+  git log --format='- %s' ${PRECEDENTE:+$PRECEDENTE..}"$VERSIONE" > "$NOTE"
   gh release create "$VERSIONE" --verify-tag --title "Assistente controlli $VERSIONE" --notes-file "$NOTE"
 fi
 

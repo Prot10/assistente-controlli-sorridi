@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assistente controlli · Sorridi</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23002c4f'/%3E%3Cpath d='M9 8c3-2 5 0 7 0s4-2 7 0c3 2 1 9 0 13-1 3-3 4-4 1l-1-4c-1-2-3-2-4 0l-1 4c-1 3-3 2-4-1-1-4-3-11 0-13z' fill='%2300b295'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/statico/tokens.css">
+<link rel="stylesheet" href="/statico/piattaforma.css">
+<link rel="stylesheet" href="/statico/componenti.css">
+<style>
+@font-face{font-family:"Josefin Sans Variable";src:url(/statico/josefin-sans-latin-wght-normal.woff2) format("woff2");font-weight:100 700;font-display:swap}
+@font-face{font-family:"Montserrat Variable";src:url(/statico/montserrat-latin-wght-normal.woff2) format("woff2");font-weight:100 900;font-display:swap}
+[hidden]{display:none!important}
+.vista{display:none}.vista.on{display:block}
+.side-stato{display:grid;gap:4px;padding:8px 10px;font-size:11.5px;color:#8fa9c1}
+.side-stato span{display:flex;align-items:center;gap:8px}
+.side-stato span::before{content:"";width:7px;height:7px;border-radius:50%;background:#f0a63a}
+.side-stato span.ok::before{background:#00b295}
+.sidebar.shut .side-stato,.sidebar.shut .side-fold span,.sidebar.shut .side-user>span:last-child{display:none}
+/* richieste */
+.richiesta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:0;padding:0;margin-bottom:14px;overflow:hidden}
+.richiesta>header{grid-column:1/-1;display:flex;justify-content:flex-start;align-items:center;gap:10px;flex-wrap:wrap;margin:0;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--raised)}
+.richiesta>header h2{font-size:12.5px}
+.richiesta>header small{color:var(--muted)}
+.richiesta .msgs,.richiesta .esito{padding:16px 20px;min-width:0}
+.richiesta .esito{border-left:1px solid var(--line)}
+.msg{margin:0 0 8px;white-space:pre-wrap}.msg time{color:var(--faint);font-size:11.5px;margin-right:8px;font-variant-numeric:tabular-nums}
+.foto img{display:block;max-width:100%;max-height:180px;margin:4px 0 8px;border:1px solid var(--line);border-radius:8px;cursor:zoom-in}
+.etichetta{display:block;margin:14px 0 5px;font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.esito .testa{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.esito .testa .chip{font-size:11.5px;padding:2px 9px}
+.esito textarea{width:100%;min-height:104px;background:var(--panel)}
+.azioni{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.meta{color:var(--muted);font-size:12px}
+.campo-c{display:inline-flex;align-items:center;gap:8px}
+.form-field .stepper{justify-self:start;height:34px;background:var(--panel)}
+.notice{margin-top:10px}
+.esempi{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:14px}
+.esempi figure{margin:0;display:grid;gap:6px;justify-items:start}
+.esempi img,.esempi .vuoto{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.esempi .vuoto{display:grid;place-items:center;color:var(--muted);background:var(--raised);font-size:12px}
+.esempi figcaption{font-size:12px;color:var(--muted)}
+/* chat */
+.chat{display:grid;grid-template-columns:280px minmax(0,1fr);height:calc(100vh - 210px);min-height:420px;padding:0;overflow:hidden}
+.contatti{overflow:auto;border-right:1px solid var(--line)}
+.contatto{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.contatto:hover{background:var(--raised)}.contatto.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.contatto span{display:grid;min-width:0;line-height:1.3}.contatto b{color:var(--head);font-weight:600}.contatto small{color:var(--muted);font-size:11.5px}
+.filo{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.bolle{display:flex;flex-direction:column;gap:6px;padding:16px;overflow:auto;background:var(--bg)}
+.bolla{max-width:70%;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);white-space:pre-wrap}
+.bolla.out{align-self:flex-end;background:var(--tint);border-color:var(--accent-soft)}
+.bolla small{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+.scrivi{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.scrivi textarea{flex:1;min-height:40px;height:40px}
+/* impostazioni */
+.colonne{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.codice{font:700 22px ui-monospace,monospace;letter-spacing:.12em;color:var(--head)}
+#zoom{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:rgba(4,8,12,.85)}
+#zoom img{max-width:96vw;max-height:94vh;border-radius:8px}
+#toast{position:fixed;bottom:18px;left:18px;z-index:70;display:none;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:var(--shadow);color:var(--ink);font-weight:500}
+@media (max-width:900px){
+  .shell{grid-template-columns:68px minmax(0,1fr)}
+  .page{padding:20px 16px 40px}
+  .page-head{flex-wrap:wrap}.page-actions,.segmented{max-width:100%;overflow-x:auto}
+  .richiesta,.colonne,.chat{grid-template-columns:1fr}.richiesta .esito{border-left:0;border-top:1px solid var(--line)}
+  .contatti{max-height:180px}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside class="sidebar" id="sidebar">
+    <a href="#richieste" class="side-brand" aria-label="Sorridi · Assistente controlli"><img src="/statico/sorridi-chiaro.png" alt="Allineatori Sorridi" id="logo"><i id="monogramma" hidden>S</i><span id="sottotitolo">Assistente controlli</span></a>
+    <nav aria-label="Sezioni">
+      <b class="side-label">Linea WhatsApp</b>
+      <a href="#richieste" class="side-item" data-vista="richieste"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span>Richieste</span><em id="n" hidden></em></a>
+      <a href="#chat" class="side-item" data-vista="chat"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg><span>Chat</span></a>
+      <b class="side-label">Andamento</b>
+      <a href="#storico" class="side-item" data-vista="storico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Storico</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-stato"><span id="s-codex">ChatGPT</span><span id="s-wa">WhatsApp</span><span id="s-auto">Invio automatico</span></div>
+      <a href="#impostazioni" class="side-item" data-vista="impostazioni"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg><span>Impostazioni</span></a>
+      <button class="side-fold" id="tema" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Tema scuro</span></button>
+      <button class="side-fold" id="piega" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg><span>Riduci</span></button>
+      <a href="#impostazioni" class="side-user" title="Chi firma gli invii fatti da qui"><span class="avatar" id="iniziali">?</span><span><b id="operatore">Operatore</b><small>firma gli invii</small></span></a>
+    </div>
+  </aside>
+
+  <main class="page" id="pagina">
+    <section class="vista" id="v-richieste">
+      <header class="page-head"><div><span class="eyebrow">Linea WhatsApp di controllo</span><h1>Richieste</h1><p>Messaggi in arrivo con la valutazione del modello e la risposta da approvare.</p></div>
+        <div class="page-actions"><div class="segmented" id="filtro"><button data-f="da_approvare" class="on">Da approvare</button><button data-f="inviate">Inviate</button><button data-f="scartate">Scartate</button><button data-f="tutte">Tutte</button></div></div></header>
+      <div id="richieste"></div>
+    </section>
+
+    <section class="vista" id="v-chat">
+      <header class="page-head"><div><span class="eyebrow">Linea WhatsApp di controllo</span><h1>Chat</h1><p>Le conversazioni complete, con lo stato di consegna.</p></div></header>
+      <div class="panel chat"><div class="contatti" id="contatti"></div>
+        <div class="filo"><div class="bolle" id="bolle"><div class="empty"><b>Scegli una conversazione</b></div></div>
+          <div class="scrivi" id="scrivi" hidden><textarea class="input area" id="testo-libero" placeholder="Scrivi un messaggio"></textarea><button class="btn primary md" id="manda-libero">Invia</button></div></div></div>
+    </section>
+
+    <section class="vista" id="v-storico">
+      <header class="page-head"><div><span class="eyebrow">Andamento</span><h1>Storico</h1><p>Quanto le proposte vengono accettate: è la base per decidere l'invio automatico.</p></div>
+        <div class="page-actions"><a class="btn soft md" href="/api/esporta.csv"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Esporta CSV</a></div></header>
+      <div class="tiles" id="tiles"></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Decisione del modello</th><th>Richieste chiuse</th><th>Confermate dall'operatore</th><th>Inviate senza modifiche</th></tr></thead><tbody id="per-dec"></tbody></table></div>
+    </section>
+
+    <section class="vista" id="v-impostazioni">
+      <header class="page-head"><div><span class="eyebrow">Assistente controlli</span><h1>Impostazioni</h1><p>Account ChatGPT, numero WhatsApp Business e regole di invio.</p></div>
+        <div class="page-actions"><button class="btn primary md" id="salva">Salva impostazioni</button></div></header>
+      <div class="colonne">
+        <div class="stack">
+          <section class="panel"><header><h2>ChatGPT</h2><span class="chip" id="codex-chip"></span></header>
+            <p class="meta" id="codex-stato"></p>
+            <div class="azioni"><button class="btn primary" id="accedi">Accedi con ChatGPT</button><button class="btn soft" id="accedi-codice">Accedi con un codice</button><button class="btn danger" id="esci">Esci</button></div>
+            <div id="accesso"></div>
+            <div class="form two" style="margin-top:18px">
+              <div class="form-field"><span>Modello</span><p class="meta code" id="modello"></p></div>
+              <label class="form-field"><span>Ragionamento</span><select id="i-sforzo"><option value="low">Basso</option><option value="medium">Medio</option><option value="high">Alto</option></select></label>
+              <label class="form-field"><span>Nome operatore</span><input class="input" type="text" id="i-operatore"><small>Compare nello storico accanto a ogni invio.</small></label>
+            </div>
+          </section>
+          <section class="panel"><header><h2>Esempi della guida</h2><span class="chip" id="es-chip"></span></header>
+            <p class="meta">Le 4 foto della guida "Gestione degli allineatori", una per grado: il modello le usa per tarare il giudizio. Sono foto di pazienti, quindi restano solo su questo PC e non fanno parte dell'app.</p>
+            <div class="esempi" id="esempi"></div>
+          </section>
+          <section class="panel"><header><h2>Invio automatico</h2></header>
+            <label class="switch"><input type="checkbox" id="i-auto_invio"><i></i><span>Invia da solo le risposte che rispettano queste condizioni</span></label>
+            <div class="form two" style="margin-top:14px">
+              <div class="form-field"><span>Decisioni</span><div class="ui-choice-row"><label class="ui-choice ui-choice-card"><input type="checkbox" class="ui-choice-input auto-dec" value="OK"><span>Va bene</span></label><label class="ui-choice ui-choice-card"><input type="checkbox" class="ui-choice-input auto-dec" value="NON_OK"><span>Non va bene</span></label></div></div>
+              <div class="form-field"><span>Confidenza minima</span><div class="stepper" id="passo"><button type="button" tabindex="-1" data-d="-5" aria-label="Diminuisci"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button><input id="i-auto_confidenza" inputmode="numeric" aria-label="Confidenza minima"><em>%</em><button type="button" tabindex="-1" data-d="5" aria-label="Aumenta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
+            </div>
+            <p class="meta" style="margin-top:12px">Solo foto di controllo che non chiedono un operatore. Attivalo dopo aver visto nello storico quante proposte vengono confermate senza modifiche.</p>
+          </section>
+        </div>
+        <section class="panel"><header><h2>WhatsApp Business</h2><span class="chip" id="wa-chip"></span></header>
+          <div class="form">
+            <label class="form-field"><span>ID numero di telefono</span><input class="input" type="text" id="i-wa_phone_number_id"></label>
+            <label class="form-field"><span>Token di accesso</span><input class="input" type="password" id="i-wa_token" autocomplete="off"></label>
+            <label class="form-field"><span>App secret</span><input class="input" type="password" id="i-wa_app_secret" autocomplete="off"></label>
+            <label class="form-field"><span>Token di verifica webhook</span><input class="input" type="password" id="i-wa_verify_token" autocomplete="off"><small>Lo scegliete voi e lo inserite uguale nel pannello Meta.</small></label>
+            <div class="form two"><label class="form-field"><span>Versione API</span><input class="input" type="text" id="i-wa_versione"></label>
+              <label class="form-field"><span>Porta webhook</span><input class="input" type="number" id="i-porta_webhook"></label></div>
+            <label class="form-field"><span>Comando tunnel</span><input class="input" type="text" id="i-comando_tunnel" placeholder="es. cloudflared tunnel run sorridi"><small>Parte insieme all'assistente e rende pubblico solo il webhook.</small></label>
+          </div>
+          <p class="meta" style="margin-top:12px">I campi segreti restano come sono se li lasci vuoti. In Meta il webhook è l'indirizzo pubblico del tunnel seguito da <b>/webhook</b>, con il campo <b>messages</b> sottoscritto.</p>
+          <div class="azioni"><button class="btn soft" id="prova-wa">Prova il collegamento</button><span class="meta" id="esito-wa"></span></div>
+        </section>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="zoom"><img alt=""></div><div id="toast" role="status"></div>
+<script type="module">
+import {menus, conferma} from "/statico/componenti.js";
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DEC = {OK: "Va bene", NON_OK: "Non va bene", INCERTO: "Da rivedere"};
+const TONO = {OK: "ok", NON_OK: "stop", INCERTO: "warn"};
+const TIPO = {foto_controllo: "Foto di controllo", domanda: "Domanda", altro: "Altro"};
+const STATO = {nuova: ["In attesa", ""], analisi: ["In analisi", "accent"], proposta: ["Da approvare", "warn"], errore: ["Errore", "stop"], inviata: ["Inviata", "ok"], scartata: ["Scartata", ""]};
+const SPUNTE = {inviato: "✓", sent: "✓", delivered: "✓✓", read: "✓✓ letto", failed: "non consegnato"};
+const ora = s => s ? new Date(s).toLocaleString("it-IT", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) : "";
+const iniziali = n => ((n || "").match(/\p{L}+/gu) || ["?"]).map(p => p[0]).join("").slice(0, 2).toUpperCase();
+const ICONA = {
+  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  invia: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+  ok: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+  matita: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  orologio: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  robot: '<rect width="16" height="12" x="4" y="8" rx="2"/><path d="M12 8V4H8"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  giro: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+};
+const svg = (n, s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONA[n]}</svg>`;
+let stato = {}, filtro = "da_approvare", contatto = null, vista = "richieste";
+const memoria = {get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }};
+
+async function api(url, corpo) {
+  const opt = corpo === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json", "X-Assistente": "1"}, body: JSON.stringify(corpo)};
+  const r = await fetch(url, opt), j = await r.json().catch(() => ({errore: r.statusText}));
+  if (!r.ok) throw new Error(j.errore || r.statusText);
+  return j;
+}
+function toast(t) { const e = $("#toast"); e.textContent = t; e.style.display = "block"; clearTimeout(e._t); e._t = setTimeout(() => e.style.display = "none", 3200); }
+
+async function aggiornaStato(forza) {
+  stato = await api("/api/stato" + (forza ? "?aggiorna=1" : ""));
+  $("#s-codex").className = stato.codex.collegato ? "ok" : ""; $("#s-codex").textContent = stato.codex.collegato ? "ChatGPT collegato" : "ChatGPT da collegare";
+  $("#s-wa").className = stato.whatsapp ? "ok" : ""; $("#s-wa").textContent = stato.whatsapp ? "WhatsApp collegato" : "WhatsApp da configurare";
+  $("#s-auto").className = stato.auto_invio ? "ok" : ""; $("#s-auto").textContent = "Invio automatico " + (stato.auto_invio ? "attivo" : "spento");
+  $("#n").textContent = stato.da_approvare; $("#n").hidden = !stato.da_approvare;
+  $("#codex-chip").className = "chip " + (stato.codex.collegato ? "ok" : "warn"); $("#codex-chip").textContent = stato.codex.collegato ? "Collegato" : "Non collegato";
+  $("#wa-chip").className = "chip " + (stato.whatsapp ? "ok" : "warn"); $("#wa-chip").textContent = stato.whatsapp ? "Configurato" : "Da configurare";
+  $("#codex-stato").textContent = stato.codex.collegato ? "Account ChatGPT collegato: l'assistente può valutare i messaggi." : "Accedi con l'account ChatGPT dell'azienda.";
+}
+
+// ---------------------------------------------------------------- richieste
+const firme = {};
+async function richieste() {
+  const lista = await api(`/api/richieste?stato=${filtro}`), box = $("#richieste");
+  if (!lista.length) { box.innerHTML = `<div class="panel empty">${svg("inbox", 28)}<b>Nessuna richiesta</b><span>I nuovi messaggi della linea compaiono qui.</span></div>`; return; }
+  box.querySelector(".empty")?.remove();
+  const ids = new Set(lista.map(r => "r" + r.id));
+  [...box.children].forEach(c => { if (!ids.has(c.id)) c.remove(); });
+  for (const r of [...lista].reverse()) {
+    const firma = [r.stato, r.analizzata, r.messaggi.length, r.errore, r.messaggi.filter(m => m.foto).length].join("|");
+    const el = document.getElementById("r" + r.id);
+    if (el && (firme[r.id] === firma || el.contains(document.activeElement))) continue;
+    const nuovo = document.createElement("article");
+    nuovo.className = "panel richiesta"; nuovo.id = "r" + r.id; nuovo.innerHTML = card(r);
+    el ? el.replaceWith(nuovo) : box.prepend(nuovo);
+    menus(nuovo);
+    firme[r.id] = firma;
+  }
+}
+
+function card(r) {
+  const nome = esc(r.nome || r.username || r.wa_id || r.contatto), [st, tono] = STATO[r.stato];
+  const msgs = r.messaggi.map(m => `${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente" loading="lazy"></div>` : ""}
+    ${m.foto_errore ? `<div class="notice stop">Foto non scaricata: ${esc(m.foto_errore)}</div>` : ""}
+    <p class="msg"><time>${ora(m.quando)}</time>${esc(m.testo)}</p>`).join("");
+  return `<header><span class="avatar">${esc(iniziali(r.nome))}</span><h2>${nome}</h2><small>${r.wa_id ? "+" + esc(r.wa_id) : ""} · richiesta ${r.id}</small><span class="grow"></span><span class="chip ${tono}">${st}</span></header>
+    <div class="msgs">${msgs}</div><div class="esito">${esito(r)}</div>`;
+}
+
+function esito(r) {
+  if (r.stato === "nuova" || r.stato === "analisi") return `<div class="empty">${svg("orologio", 24)}<b>${r.stato === "analisi" ? "Analisi in corso" : "In attesa di altri messaggi"}</b><span>La proposta compare da sola.</span></div>`;
+  const e = r.esito;
+  const testa = !e ? "" : `<div class="testa">${e.tipo === "foto_controllo" ? `<span class="chip ${TONO[e.decisione]}">${DEC[e.decisione]}</span>${e.grado ? `<span class="chip">Grado ${e.grado}</span>` : ""}` : `<span class="chip accent">${TIPO[e.tipo]}</span>`}
+    ${e.serve_operatore ? `<span class="chip stop">Serve un operatore</span>` : ""}<span class="meta">confidenza ${e.confidenza} · ${esc(r.modello)}</span></div>
+    <span class="etichetta">Motivo</span>${esc(e.motivo)}${e.azione ? `<span class="etichetta">Azione secondo la guida</span>${esc(e.azione)}` : ""}`;
+  if (r.stato === "inviata" || r.stato === "scartata") {
+    const corretta = r.decisione_operatore && e && e.tipo === "foto_controllo" && r.decisione_operatore !== e.decisione;
+    return `${testa}<span class="etichetta">${r.stato === "inviata" ? "Risposta inviata" : "Scartata"}</span>${r.stato === "inviata" ? `<p class="msg">${esc(r.risposta_inviata)}</p>` : ""}
+      <p class="meta">${esc(r.operatore)} · ${ora(r.decisa)}${r.automatica ? " · automatica" : ""}${r.modificata ? " · modificata" : ""}${corretta ? ` · decisione corretta in “${DEC[r.decisione_operatore]}”` : ""}</p>`;
+  }
+  const scelta = e && e.tipo === "foto_controllo" ? `<span class="meta campo-c">Decisione corretta <select class="compatto" data-c="decisione" aria-label="Decisione corretta">${Object.entries(DEC).map(([k, v]) => `<option value="${k}" ${k === e.decisione ? "selected" : ""}>${v}</option>`).join("")}</select></span>` : "";
+  return `${r.errore ? `<div class="notice stop">${esc(r.errore)}</div>` : ""}${testa}
+    <span class="etichetta">Risposta da inviare</span><textarea class="input area" data-c="testo">${esc(r.risposta_proposta || "")}</textarea>
+    ${r.fuori_finestra ? `<div class="notice">Sono passate più di 24 ore dall'ultimo messaggio del paziente: WhatsApp accetta solo messaggi modello approvati.</div>` : ""}
+    <div class="azioni"><button class="btn primary md" data-az="invia">${svg("invia")}Invia</button><button class="btn soft md" data-az="scarta">${svg("x")}Scarta</button>
+      <span class="grow"></span>${scelta}</div>
+    <div class="azioni"><button class="btn ghost sm" data-az="rianalizza">${svg("giro", 13)}Rianalizza</button></div>`;
+}
+
+$("#richieste").onclick = async ev => {
+  if (ev.target.matches(".foto img")) return zoom(ev.target.src);
+  const b = ev.target.closest("[data-az]"); if (!b) return;
+  const c = b.closest(".richiesta"), id = c.id.slice(1), val = k => c.querySelector(`[data-c=${k}]`)?.value;
+  b.disabled = true;
+  try {
+    if (b.dataset.az === "invia") { await api(`/api/richieste/${id}/invia`, {testo: val("testo"), decisione: val("decisione")}); toast("Messaggio inviato"); }
+    if (b.dataset.az === "scarta") { await api(`/api/richieste/${id}/scarta`, {decisione: val("decisione")}); toast("Richiesta scartata"); }
+    if (b.dataset.az === "rianalizza") { await api(`/api/richieste/${id}/rianalizza`, {}); delete firme[id]; }
+    document.activeElement.blur(); await richieste(); aggiornaStato();
+  } catch (e) { toast(e.message); b.disabled = false; }
+};
+$("#filtro").onclick = e => { const b = e.target.closest("button"); if (!b) return; filtro = b.dataset.f; $$("#filtro button").forEach(x => x.classList.toggle("on", x === b)); $("#richieste").innerHTML = ""; Object.keys(firme).forEach(k => delete firme[k]); richieste(); };
+
+// ---------------------------------------------------------------- chat
+async function contatti() {
+  const l = await api("/api/contatti"), firma = JSON.stringify(l) + contatto;
+  if ($("#contatti").dataset.firma !== firma) $("#contatti").dataset.firma = firma, $("#contatti").innerHTML = l.length ? l.map(c => `<button class="contatto ${c.id === contatto ? "on" : ""}" data-id="${esc(c.id)}"><span class="avatar">${esc(iniziali(c.nome))}</span><span><b>${esc(c.nome || c.username || c.wa_id || c.id)}</b><small>${ora(c.ultimo)}</small></span></button>`).join("") : `<div class="empty"><b>Ancora nessun messaggio</b></div>`;
+  if (contatto) filo();
+}
+async function filo() {
+  const l = await api(`/api/contatti/${encodeURIComponent(contatto)}/messaggi`), b = $("#bolle"), giu = b.scrollTop + b.clientHeight >= b.scrollHeight - 30, firma = contatto + JSON.stringify(l);
+  $("#scrivi").hidden = false;
+  if (b.dataset.firma === firma) return;
+  b.dataset.firma = firma;
+  b.innerHTML = l.map(m => `<div class="bolla ${m.direzione}">${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente"></div>` : ""}${esc(m.testo)}
+    <small>${ora(m.quando)}${m.direzione === "out" ? ` · ${esc(m.operatore || "")} · ${SPUNTE[m.stato] || esc(m.stato)}${m.errore ? " · " + esc(m.errore) : ""}` : ""}</small></div>`).join("");
+  if (giu) b.scrollTop = b.scrollHeight;
+}
+$("#contatti").onclick = e => { const c = e.target.closest(".contatto"); if (!c) return; contatto = c.dataset.id; $$(".contatto").forEach(x => x.classList.toggle("on", x === c)); filo().then(() => $("#bolle").scrollTop = 1e9); };
+$("#bolle").onclick = e => { if (e.target.matches(".foto img")) zoom(e.target.src); };
+$("#manda-libero").onclick = async () => {
+  const t = $("#testo-libero").value.trim(); if (!t) return;
+  try { await api(`/api/contatti/${encodeURIComponent(contatto)}/invia`, {testo: t}); $("#testo-libero").value = ""; filo(); } catch (e) { toast(e.message); }
+};
+
+// ---------------------------------------------------------------- storico
+async function storico() {
+  const s = await api("/api/statistiche"), pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
+  const chiuse = s.inviate_senza_modifiche + s.inviate_modificate + s.inviate_automatiche + s.scartate;
+  $("#tiles").innerHTML = [["inbox", s.da_approvare, "Da approvare", "warn"], ["ok", pct(s.inviate_senza_modifiche + s.inviate_automatiche, chiuse), "Accettate così come sono", "ok"],
+    ["matita", s.inviate_modificate, "Inviate modificate", ""], ["x", s.scartate, "Scartate", ""],
+    ["invia", s.inviate_senza_modifiche, "Inviate senza modifiche", "ok"], ["robot", s.inviate_automatiche, "Inviate in automatico", ""],
+    ["inbox", s.richieste, "Richieste in tutto", ""], ["orologio", s.minuti_mediani ?? "–", "Minuti alla risposta (mediana)", ""]]
+    .map(([i, v, t, c]) => `<div class="tile ${c}">${svg(i, 18)}<b>${v}</b><span>${t}</span></div>`).join("");
+  const righe = Object.entries(s.per_decisione);
+  $("#per-dec").innerHTML = righe.length ? righe.map(([d, v]) => `<tr><td><span class="chip ${TONO[d]}">${DEC[d]}</span></td><td class="code">${v.totale}</td><td>${v.confermate} <small>${pct(v.confermate, v.totale)}</small></td><td>${v.inviate_senza_modifiche} <small>${pct(v.inviate_senza_modifiche, v.totale)}</small></td></tr>`).join("") : `<tr><td colspan="4" class="meta">Nessuna foto di controllo ancora chiusa.</td></tr>`;
+}
+
+// ---------------------------------------------------------------- impostazioni
+const NUMERI = ["porta_webhook", "auto_confidenza"];
+const CAMPI = ["sforzo", "operatore", "wa_phone_number_id", "wa_token", "wa_app_secret", "wa_verify_token", "wa_versione", "porta_webhook", "comando_tunnel", "auto_confidenza"];
+async function impostazioni() {
+  const imp = await api("/api/impostazioni");
+  $("#modello").textContent = imp.modello;
+  esempi();
+  for (const k of CAMPI) { const el = $("#i-" + k); if (el.type === "password") { el.value = ""; el.placeholder = imp[k] || "non impostato"; } else el.value = imp[k]; }
+  $("#i-auto_invio").checked = imp.auto_invio;
+  $$(".auto-dec").forEach(c => c.checked = imp.auto_decisioni.includes(c.value));
+  menus($("#v-impostazioni"));
+  $("#operatore").textContent = imp.operatore || "Operatore"; $("#iniziali").textContent = iniziali(imp.operatore);
+}
+$("#salva").onclick = async () => {
+  const dati = {auto_invio: $("#i-auto_invio").checked, auto_decisioni: $$(".auto-dec").filter(c => c.checked).map(c => c.value)};
+  for (const k of CAMPI) dati[k] = NUMERI.includes(k) ? Number($("#i-" + k).value) : $("#i-" + k).value.trim();
+  try { const r = await api("/api/impostazioni", dati); toast(r.riavvio ? "Salvate. Riavvia l'assistente per la nuova porta." : "Impostazioni salvate"); impostazioni(); aggiornaStato(); } catch (e) { toast(e.message); }
+};
+const GRADI = {1: "Grado 1 · aderente", 2: "Grado 2 · lieve-moderato", 3: "Grado 3 · moderato-severo", 4: "Grado 4 · incongruente"};
+async function esempi() {
+  const mancano = (await api("/api/esempi")).mancanti;
+  $("#es-chip").className = "chip " + (mancano.length ? "warn" : "ok");
+  $("#es-chip").textContent = mancano.length ? `${4 - mancano.length} di 4` : "Completi";
+  $("#esempi").innerHTML = Object.entries(GRADI).map(([g, t]) => `<figure>${mancano.includes(+g) ? `<div class="vuoto">Manca</div>` : `<img src="/api/esempi/${g}?v=${Date.now()}" alt="${t}">`}
+    <figcaption>${t}</figcaption><label class="btn soft sm">Carica<input type="file" accept="image/jpeg,image/png" data-g="${g}" hidden></label></figure>`).join("");
+}
+$("#esempi").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const dati = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result.split(",")[1]); r.readAsDataURL(f); });
+  try { await api(`/api/esempi/${e.target.dataset.g}`, {dati}); toast("Esempio salvato"); esempi(); aggiornaStato(); } catch (err) { toast(err.message); }
+};
+$("#prova-wa").onclick = async () => {
+  $("#esito-wa").textContent = "Provo…";
+  try { const r = await api("/api/whatsapp/prova", {}); $("#esito-wa").textContent = `Collegato: ${r.verified_name || ""} ${r.display_phone_number || ""}`; }
+  catch (e) { $("#esito-wa").textContent = e.message; }
+};
+async function accedi(dispositivo) {
+  await api("/api/codex/accedi", {dispositivo});
+  const giro = async () => {
+    const a = await api("/api/codex/accesso");
+    $("#accesso").innerHTML = a.finito ? `<div class="notice ${a.riuscito ? "info" : "stop"}">${a.riuscito ? "Accesso completato." : "Accesso non riuscito: riprova."}</div>`
+      : `<div class="notice info"><div>${a.codice ? `Apri <a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.link)}</a>, entra con l'account ChatGPT dell'azienda e inserisci il codice<div class="codice">${esc(a.codice)}</div>`
+        : a.link ? `Si è aperta una pagina di accesso nel browser. Se non la vedi, <a href="${esc(a.link)}" target="_blank" rel="noopener">apri il link</a>.` : "Avvio dell'accesso…"}</div></div>`;
+    if (a.finito) aggiornaStato(true); else setTimeout(giro, 1500);
+  };
+  giro();
+}
+$("#passo").onclick = e => { const b = e.target.closest("button"); if (!b) return; const i = $("#i-auto_confidenza"); i.value = Math.max(0, Math.min(100, (Number(i.value) || 0) + Number(b.dataset.d))); };
+$("#accedi").onclick = () => accedi(false);
+$("#accedi-codice").onclick = () => accedi(true);
+$("#esci").onclick = async () => { if (await conferma("Scollegare ChatGPT?", "L'assistente non potrà valutare i messaggi finché qualcuno non accede di nuovo.", "Esci", "danger")) { await api("/api/codex/esci", {}); aggiornaStato(true); } };
+
+// ---------------------------------------------------------------- cornice
+function zoom(src) { $("#zoom img").src = src; $("#zoom").style.display = "grid"; }
+$("#zoom").onclick = () => $("#zoom").style.display = "none";
+document.onkeydown = e => { if (e.key === "Escape") $("#zoom").style.display = "none"; };
+function mostra() {
+  vista = location.hash.slice(1); if (!document.getElementById("v-" + vista)) vista = "richieste";
+  $$(".side-item").forEach(a => a.classList.toggle("on", a.dataset.vista === vista));
+  $$(".vista").forEach(s => s.classList.toggle("on", s.id === "v-" + vista));
+  ({richieste, chat: contatti, storico, impostazioni})[vista]().catch(e => toast(e.message));
+}
+window.onhashchange = mostra;
+function piega(chiusa) {
+  $("#shell").classList.toggle("shut", chiusa); $("#sidebar").classList.toggle("shut", chiusa);
+  $("#logo").hidden = chiusa; $("#monogramma").hidden = !chiusa; $("#sottotitolo").hidden = chiusa;
+  memoria.set("assistente-piega", chiusa ? "1" : "0");
+}
+$("#piega").onclick = () => piega(!$("#shell").classList.contains("shut"));
+function tema(scuro) { document.documentElement.dataset.theme = scuro ? "dark" : "light"; $("#tema span").textContent = scuro ? "Tema chiaro" : "Tema scuro"; memoria.set("assistente-tema", scuro ? "dark" : "light"); }
+$("#tema").onclick = () => tema(document.documentElement.dataset.theme !== "dark");
+tema(memoria.get("assistente-tema") === "dark");
+piega(memoria.get("assistente-piega") === "1");
+setInterval(() => { aggiornaStato().catch(() => {}); if (vista === "richieste") richieste().catch(() => {}); if (vista === "chat") contatti().catch(() => {}); if (vista === "storico") storico().catch(() => {}); }, 4000);
+aggiornaStato(true).then(() => { impostazioni(); mostra(); }).catch(e => toast(e.message));
+</script>
+</body>
+</html>

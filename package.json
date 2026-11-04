@@ -1,0 +1,47 @@
+{
+  "name": "assistente-controlli",
+  "productName": "Assistente controlli",
+  "version": "0.1.0",
+  "description": "Assistente per la linea WhatsApp di controllo di Allineatori Sorridi",
+  "author": "Andrea Protani",
+  "license": "MIT",
+  "repository": "github:Prot10/assistente-controlli-sorridi",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "backend": "node scripts/backend.mjs",
+    "codex": "node scripts/codex.mjs",
+    "dist": "npm run backend && npm run codex && electron-builder --publish never",
+    "release:mac": "bash scripts/release-mac.sh"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  },
+  "devDependencies": {
+    "electron": "45.2.2",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "it.allineatorisorridi.assistente-controlli",
+    "productName": "Assistente controlli",
+    "artifactName": "assistente-controlli-${version}-${os}-${arch}.${ext}",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["electron/**", "package.json"],
+    "extraResources": [
+      { "from": "vendor/backend", "to": "backend" },
+      { "from": "vendor/codex", "to": "codex" }
+    ],
+    "publish": [{ "provider": "github", "owner": "Prot10", "repo": "assistente-controlli-sorridi", "releaseType": "release" }],
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64"] }, { "target": "zip", "arch": ["arm64"] }],
+      "category": "public.app-category.medical",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
+    },
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "Assistente controlli" }
+  }
+}

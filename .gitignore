@@ -1,0 +1,9 @@
+node_modules/
+dist/
+vendor/
+build-py/
+.venv/
+.env
+__pycache__/
+cache/
+prova-*/

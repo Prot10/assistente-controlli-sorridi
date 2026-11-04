@@ -1,0 +1,259 @@
+{
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "tipo",
+  "valutabile",
+  "denti",
+  "decisione",
+  "grado",
+  "serve_operatore",
+  "motivo",
+  "azione",
+  "risposta_suggerita",
+  "confidenza",
+  "operazioni",
+  "cambiato"
+ ],
+ "properties": {
+  "tipo": {
+   "type": "string",
+   "enum": [
+    "foto_controllo",
+    "domanda",
+    "altro"
+   ]
+  },
+  "valutabile": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "denti": {
+   "anyOf": [
+    {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "superiore",
+      "inferiore",
+      "segni",
+      "esclusi",
+      "riga_tabella"
+     ],
+     "properties": {
+      "superiore": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "allineatore",
+        "gradi"
+       ],
+       "properties": {
+        "allineatore": {
+         "type": "string",
+         "enum": [
+          "presente",
+          "assente",
+          "non_visibile"
+         ]
+        },
+        "gradi": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "13",
+          "12",
+          "11",
+          "21",
+          "22",
+          "23"
+         ],
+         "properties": {
+          "13": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "12": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "11": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "21": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "22": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "23": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          }
+         }
+        }
+       }
+      },
+      "inferiore": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "allineatore",
+        "gradi"
+       ],
+       "properties": {
+        "allineatore": {
+         "type": "string",
+         "enum": [
+          "presente",
+          "assente",
+          "non_visibile"
+         ]
+        },
+        "gradi": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "33",
+          "32",
+          "31",
+          "41",
+          "42",
+          "43"
+         ],
+         "properties": {
+          "33": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "32": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "31": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "41": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "42": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          },
+          "43": {
+           "type": [
+            "integer",
+            "null"
+           ]
+          }
+         }
+        }
+       }
+      },
+      "segni": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "A",
+         "D",
+         "B"
+        ]
+       }
+      },
+      "esclusi": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "riga_tabella": {
+       "type": "integer"
+      }
+     }
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "decisione": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "enum": [
+    "OK",
+    "NON_OK",
+    "INCERTO",
+    null
+   ]
+  },
+  "grado": {
+   "type": [
+    "integer",
+    "null"
+   ],
+   "enum": [
+    1,
+    2,
+    3,
+    4,
+    null
+   ]
+  },
+  "serve_operatore": {
+   "type": "boolean"
+  },
+  "motivo": {
+   "type": "string"
+  },
+  "azione": {
+   "type": "string"
+  },
+  "risposta_suggerita": {
+   "type": "string"
+  },
+  "confidenza": {
+   "type": "integer"
+  },
+  "operazioni": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "cambiato": {
+   "type": "boolean"
+  }
+ }
+}

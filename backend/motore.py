@@ -1,0 +1,217 @@
+"""Valutazione dei messaggi con un modello OpenAI tramite Codex e l'abbonamento ChatGPT.
+
+L'harness del compito sta in harness/: istruzioni sui messaggi, skill di valutazione e di ispezione della foto,
+esempi della guida di Sorridi (le foto stanno nella cartella dati, non nel codice) e formato della risposta.
+Il modello può solo guardare le foto e usare griglia e zoom di strumenti_foto.py."""
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from pathlib import Path
+
+from archivio import cartella_dati
+
+QUI = Path(__file__).resolve().parent
+HARNESS = QUI / "harness"
+ISTRUZIONI = ["messaggi.md", "valuta-fit.md", "ispeziona-foto.md"]
+SCHEMA = HARNESS / "schema.json"
+# Scelto sulle 42 foto di prova il 4 Nov 2026: gpt-6.1-terra mancava troppi "non ok".
+MODELLO = "gpt-6.1-sol"
+VERSIONE_CODEX = "0.166.0"
+GRADI_ESEMPI = (1, 2, 3, 4)
+
+# Nessuno strumento di Codex resta attivo: al massimo griglia e zoom di strumenti_foto.py (vedi chiedi).
+DISATTIVA = [
+    "shell_tool", "unified_exec", "apps", "browser_use", "browser_use_external",
+    "computer_use", "image_generation", "memories", "plugins", "hooks",
+    "multi_agent", "goals", "skill_search", "tool_suggest", "sleep_tool", "view_image",
+]
+VOCI_AMMESSE = {"agent_message", "reasoning"}
+# Errori di rete passeggeri visti il 3 Nov 2026: si riprova dopo queste attese (secondi).
+RETE = re.compile(r"failed to connect|stream disconnected|error sending request|connection (reset|refused)", re.I)
+RIPROVA = [15, 60]
+
+
+class Rifiutato(Exception):
+    pass
+
+
+def comando_codex():
+    # L'app desktop indica il Codex che porta con sé; senza, per lo sviluppo, il pacchetto npm della stessa versione.
+    if os.environ.get("ASSISTENTE_CODEX"):
+        return [os.environ["ASSISTENTE_CODEX"]]
+    npx = shutil.which("npx")
+    if npx:
+        return [npx, "-y", f"@openai/codex@{VERSIONE_CODEX}"]
+    raise Rifiutato("Codex non è installato")
+
+
+def cartella_esempi():
+    return cartella_dati() / "esempi"
+
+
+def esempi():
+    """Le 4 foto della guida, una per grado, se ci sono tutte: sono foto di pazienti e restano fuori dal codice."""
+    f = [cartella_esempi() / f"guida-grado-{g}.jpg" for g in GRADI_ESEMPI]
+    return f if all(x.exists() for x in f) else []
+
+
+def esempi_mancanti():
+    return [g for g in GRADI_ESEMPI if not (cartella_esempi() / f"guida-grado-{g}.jpg").exists()]
+
+
+def ambiente():
+    """Il login ChatGPT dell'assistente vive nella sua cartella dati, separato da altri usi di Codex."""
+    env = dict(os.environ)
+    if "CODEX_HOME" not in env:
+        env["CODEX_HOME"] = str(cartella_dati() / "codex")
+        Path(env["CODEX_HOME"]).mkdir(parents=True, exist_ok=True)
+    return env
+
+
+def _esegui(args, **kw):
+    return subprocess.run(comando_codex() + args, capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", env=ambiente(), **kw)
+
+
+def prompt(messaggi, con_esempi):
+    righe, n = [], 0
+    for m in messaggi:
+        n += bool(m["immagine"])
+        righe.append({"ora": m["quando"].strftime("%d/%m %H:%M"), "testo": m["testo"],
+                      "foto": f"immagine {n}" if m["immagine"] else None})
+    dati = json.dumps(righe, ensure_ascii=False, indent=1).replace("<", "\\u003c")
+    parti = [(HARNESS / f).read_text(encoding="utf-8") for f in ISTRUZIONI + (["esempi.md"] if con_esempi else [])]
+    allegati = f"Immagini allegate: {n} foto del paziente" + (", poi le 4 foto di esempio della guida." if con_esempi else ".")
+    return "\n\n".join(parti) + f"\n\n<messaggi>\n{dati}\n</messaggi>\n\n{allegati}\n"
+
+
+def controlla(esito, ci_sono_foto):
+    mancano = [k for k in json.loads(SCHEMA.read_text())["required"] if k not in esito]
+    if mancano:
+        raise Rifiutato(f"campi mancanti: {mancano}")
+    esito["confidenza"] = max(0, min(100, int(esito["confidenza"])))
+    if esito["tipo"] == "foto_controllo" and not ci_sono_foto:
+        esito.update(decisione="INCERTO", grado=None, valutabile=False, denti=None)
+    if esito["tipo"] == "foto_controllo" and esito["decisione"] != "OK":
+        esito["serve_operatore"] = True
+    if esito["confidenza"] < 60:
+        esito["serve_operatore"] = True
+    return esito
+
+
+def chiedi(testo, immagini, modello, sforzo="medium", schema=SCHEMA, foto_strumenti=(), timeout=600):
+    """Una valutazione con Codex: testo e immagini allegate, risposta JSON secondo lo schema.
+    foto_strumenti: foto su cui il modello può usare griglia e zoom (strumenti_foto.py); vuoto = nessuno strumento."""
+    with tempfile.TemporaryDirectory(prefix="assistente-") as tmp:
+        tmp = Path(tmp)
+        (tmp / "vuota").mkdir()
+        uscita = tmp / "esito.json"
+        args = ["exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config", "--ignore-rules",
+                "-s", "read-only", "-C", str(tmp / "vuota"), "-m", modello,
+                "-c", f'model_reasoning_effort="{sforzo}"', "-c", 'web_search="disabled"',
+                "--output-schema", str(schema), "-o", str(uscita), "--json"]
+        for f in DISATTIVA:
+            args += ["--disable", f]
+        if foto_strumenti:
+            # Codex avvia il server in un'altra cartella: percorsi assoluti. json.dumps scrive TOML valido anche su Windows.
+            foto = [str(Path(p).resolve()) for p in foto_strumenti]
+            # Nell'app impacchettata lo stesso eseguibile fa anche da server degli strumenti.
+            server = ["strumenti-foto", *foto] if getattr(sys, "frozen", False) else [str(QUI / "strumenti_foto.py"), *foto]
+            args += ["-c", f"mcp_servers.foto.command={json.dumps(sys.executable)}",
+                     "-c", f"mcp_servers.foto.args={json.dumps(server)}",
+                     "-c", 'mcp_servers.foto.default_tools_approval_mode="approve"']
+        args += [f"--image={p}" for p in immagini] + ["-"]
+        t0 = time.time()
+        for attesa in RIPROVA + [None]:
+            r = _esegui(args, input=testo, timeout=timeout)
+            if attesa is None or r.returncode == 0 or not RETE.search(r.stderr or ""):
+                break
+            time.sleep(attesa)  # la connessione con OpenAI è caduta: riprovo
+        secondi = round(time.time() - t0, 1)
+        voci, operazioni, uso = [], [], {}
+        for riga in r.stdout.splitlines():
+            try:
+                ev = json.loads(riga)
+            except ValueError:
+                continue
+            it = ev.get("item")
+            if ev.get("type") == "item.completed" and it:
+                strumento = foto_strumenti and it.get("type") == "mcp_tool_call" and it.get("server") == "foto"
+                voci.append(None if it.get("type") in VOCI_AMMESSE or strumento else it.get("type"))
+                if strumento:
+                    esito = it.get("result") or {}
+                    testo_esito = " ".join(c.get("text", "") for c in esito.get("content", []) if c.get("type") == "text")
+                    operazioni.append({"strumento": it.get("tool"), "argomenti": it.get("arguments"),
+                                       "riuscita": it.get("status") == "completed" and not esito.get("is_error"),
+                                       "esito": testo_esito or (it.get("error") or {}).get("message", "")})
+            if ev.get("type") == "turn.completed":
+                uso = ev.get("usage", {})
+        if r.returncode or not uscita.exists():
+            raise Rifiutato(f"Codex è uscito con {r.returncode}: {(r.stderr or r.stdout)[-400:]}")
+        estranei = sorted({v for v in voci if v})
+        if estranei:
+            raise Rifiutato(f"il modello ha provato a usare strumenti non previsti ({', '.join(estranei)}): esito scartato")
+        risposta = json.loads(uscita.read_text(encoding="utf-8"))
+    return {"risposta": risposta, "operazioni": operazioni, "modello": modello, "sforzo": sforzo,
+            "secondi": secondi, "token": uso}
+
+
+def analizza(messaggi, sforzo="medium", timeout=900, foto_esempi=None):
+    """messaggi: [{quando: datetime, testo: str, immagine: percorso|None}]. Non invia nulla al mittente.
+    foto_esempi: le 4 foto della guida; se mancano, la valutazione procede senza esempi."""
+    foto = [m["immagine"] for m in messaggi if m["immagine"]]
+    ex = esempi() if foto_esempi is None else list(foto_esempi)
+    r = chiedi(prompt(messaggi, bool(ex)), foto + [str(e) for e in ex], MODELLO, sforzo,
+               foto_strumenti=foto, timeout=timeout)
+    r["esito"] = controlla(r.pop("risposta"), bool(foto))
+    r["esempi"] = bool(ex)
+    return r
+
+
+class Accesso:
+    """Login ChatGPT di Codex avviato dalla pagina: il browser si apre su questo PC, oppure codice dispositivo."""
+
+    def __init__(self):
+        self.proc, self.righe, self.lock = None, [], threading.Lock()
+
+    def stato(self):
+        try:
+            r = _esegui(["login", "status"], timeout=120)
+            testo = (r.stdout + r.stderr).strip().splitlines()
+            ultima = testo[-1] if testo else ""
+        except (OSError, subprocess.TimeoutExpired, Rifiutato) as e:
+            return {"collegato": False, "testo": str(e)}
+        return {"collegato": "Logged in" in ultima, "testo": ultima}
+
+    def avvia(self, dispositivo=False):
+        with self.lock:
+            if self.proc and self.proc.poll() is None:
+                self.proc.kill()
+            self.righe = []
+            self.proc = subprocess.Popen(comando_codex() + ["login"] + (["--device-auth"] if dispositivo else []),
+                                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                         encoding="utf-8", errors="replace", env=ambiente())
+        threading.Thread(target=self._leggi, args=(self.proc,), daemon=True).start()
+
+    def _leggi(self, proc):
+        for riga in proc.stdout:
+            self.righe.append(re.sub(r"\x1b\[[0-9;]*m", "", riga).rstrip())
+
+    def avanzamento(self):
+        testo = "\n".join(self.righe)
+        link = re.findall(r"https://\S+", testo)
+        codice = re.search(r"\b[A-Z0-9]{4}-[A-Z0-9]{4,6}\b", testo)
+        finito = self.proc is not None and self.proc.poll() is not None
+        return {"in_corso": self.proc is not None and not finito, "finito": finito,
+                "riuscito": finito and self.proc.returncode == 0,
+                "link": link[-1] if link else None, "codice": codice.group(0) if codice else None}
+
+    def esci(self):
+        _esegui(["logout"], timeout=60)

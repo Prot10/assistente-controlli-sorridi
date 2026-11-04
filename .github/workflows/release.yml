@@ -1,0 +1,39 @@
+name: Windows
+
+# Un tag v* costruisce l'installer per Windows e lo carica nella release del tag, dove electron-updater lo trova.
+# Avviato a mano, costruisce soltanto e lascia l'installer tra gli artifact del run, per provarlo.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: pip install -r backend/requirements.txt
+      - run: npm ci
+      - run: npm run backend
+      - run: npm run codex
+      - name: Installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --publish ${{ github.ref_type == 'tag' && 'always' || 'never' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/*.exe
+            dist/latest.yml

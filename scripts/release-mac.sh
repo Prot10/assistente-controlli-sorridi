@@ -17,6 +17,8 @@ set -a; source "$ENV_FILE"; set +a
 export APPLE_APP_SPECIFIC_PASSWORD="$APPLE_PASSWORD"
 export GH_TOKEN="$(gh auth token --user Prot10)"
 export PYTHON="${PYTHON:-.venv/bin/python}"
+# Nel portachiavi ci sono due Developer ID con lo stesso nome: si sceglie per impronta (la stessa di Kosmico).
+export CSC_NAME="${CSC_NAME:-E1513974CD376A7B5355D3EB3E90DDFED265943B}"
 
 if ! git rev-parse -q --verify "refs/tags/$VERSIONE" >/dev/null; then
   PRECEDENTE="$(git describe --tags --abbrev=0 2>/dev/null || true)"

@@ -1,7 +1,7 @@
 {
   "name": "assistente-controlli",
   "productName": "Assistente controlli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Assistente per la linea WhatsApp di controllo di Allineatori Sorridi",
   "author": "Andrea Protani",
   "license": "MIT",
@@ -12,8 +12,9 @@
     "start": "electron .",
     "backend": "node scripts/backend.mjs",
     "codex": "node scripts/codex.mjs",
-    "dist": "npm run backend && npm run codex && electron-builder --publish never",
-    "release:mac": "bash scripts/release-mac.sh"
+    "dist": "npm run backend && npm run codex && npm run cloudflared && electron-builder --publish never",
+    "release:mac": "bash scripts/release-mac.sh",
+    "cloudflared": "node scripts/cloudflared.mjs"
   },
   "dependencies": {
     "electron-updater": "6.8.11"
@@ -42,6 +43,10 @@
       {
         "from": "vendor/codex",
         "to": "codex"
+      },
+      {
+        "from": "vendor/cloudflared",
+        "to": "cloudflared"
       }
     ],
     "publish": [

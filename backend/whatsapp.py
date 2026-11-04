@@ -4,13 +4,22 @@ import hashlib
 import hmac
 import json
 import mimetypes
+import ssl
 import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
+
+import certifi
 
 
 ALTRI_TIPI = {"audio": "audio", "video": "video", "document": "documento", "sticker": "sticker"}
+PERMESSI = {"whatsapp_business_messaging", "whatsapp_business_management"}
+# Certificati del sistema più quelli di certifi: un Mac senza Homebrew non ne ha altri per il Python incluso nell'app.
+TLS = ssl.create_default_context()
+TLS.load_verify_locations(certifi.where())
+CAMPI_NUMERO = "id,display_phone_number,verified_name,name_status,platform_type,status,code_verification_status,quality_rating"
 
 
 class ErroreWhatsApp(Exception):
@@ -67,11 +76,11 @@ class Cloud:
     def configurato(self):
         return bool(self.token and self.numero)
 
-    def _chiama(self, url, dati=None, grezzo=False):
+    def _chiama(self, url, dati=None, grezzo=False, token=None):
         req = urllib.request.Request(url, data=json.dumps(dati).encode() if dati is not None else None,
-                                     headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"})
+                                     headers={"Authorization": f"Bearer {token or self.token}", "Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=60, context=TLS) as r:
                 corpo = r.read()
         except urllib.error.HTTPError as e:
             try:
@@ -83,8 +92,43 @@ class Cloud:
             raise ErroreWhatsApp(f"connessione non riuscita: {e.reason}") from None
         return corpo if grezzo else json.loads(corpo)
 
-    def prova(self):
-        return self._chiama(f"{self.base}/{self.numero}?fields=display_phone_number,verified_name")
+    # ------------------------------------------------------------ configurazione guidata
+    def scopri(self, segreto, app_id="", waba_id=""):
+        """Dal solo token: app, permessi, scadenza, account WhatsApp e numeri. Con l'app secret, anche il webhook dell'app."""
+        d = self._chiama(f"{self.base}/debug_token?input_token={quote(self.token)}")["data"]
+        if not d.get("is_valid"):
+            raise ErroreWhatsApp("il token non è valido o è scaduto")
+        app_id = d.get("app_id") or app_id
+        info = {"app": {"id": app_id, "nome": d.get("application")}, "tipo": d.get("type"),
+                "scade": d.get("expires_at") or 0, "mancano": sorted(PERMESSI - set(d.get("scopes", []))), "wabas": []}
+        wabas = {t for g in d.get("granular_scopes", []) if g.get("scope") in PERMESSI for t in g.get("target_ids", [])}
+        for w in sorted(wabas | ({waba_id} if waba_id else set())):
+            iscritte = self._chiama(f"{self.base}/{w}/subscribed_apps").get("data", [])
+            nostra = next((a for a in iscritte if a.get("whatsapp_business_api_data", {}).get("id") == app_id), None)
+            info["wabas"].append({
+                "id": w, "nome": self._chiama(f"{self.base}/{w}?fields=name").get("name"),
+                "numeri": self._chiama(f"{self.base}/{w}/phone_numbers?fields={CAMPI_NUMERO}").get("data", []),
+                "app_iscritta": nostra is not None, "indirizzo": (nostra or {}).get("override_callback_uri")})
+        info["segreto_ok"] = info["webhook_app"] = None
+        if segreto and app_id:
+            # Il token dell'app (id|secret) funziona solo se il secret è giusto: è anche la prova del secret.
+            try:
+                abb = self._chiama(f"{self.base}/{app_id}/subscriptions", token=f"{app_id}|{segreto}").get("data", [])
+                info["segreto_ok"] = True
+                wa = next((a for a in abb if a.get("object") == "whatsapp_business_account"), None)
+                info["webhook_app"] = wa and {"url": wa.get("callback_url"),
+                                              "messages": any(f.get("name") == "messages" for f in wa.get("fields", []))}
+            except ErroreWhatsApp as e:
+                info["segreto_ok"], info["errore_segreto"] = False, str(e)
+        return info
+
+    def registra(self, pin):
+        """Attiva il numero sulla Cloud API. Il PIN è quello della verifica in due passaggi (se manca, lo imposta)."""
+        return self._chiama(f"{self.base}/{self.numero}/register", {"messaging_product": "whatsapp", "pin": pin})
+
+    def indirizza(self, waba_id, url, verifica):
+        """Iscrive l'app all'account WhatsApp e manda i suoi webhook a questo indirizzo. Meta lo verifica subito."""
+        return self._chiama(f"{self.base}/{waba_id}/subscribed_apps", {"override_callback_uri": url, "verify_token": verifica})
 
     def scarica(self, media_id, cartella):
         """Due passi: l'id dà un URL temporaneo, che si scarica con lo stesso token."""

@@ -35,14 +35,15 @@ function portaLibera(porta) {
 function comandoBackend(porta) {
   const args = ["--porta", String(porta), "--non-aprire"];
   if (!app.isPackaged) {
-    // Sviluppo: Python di sistema e Codex da npx, come da riga di comando.
+    // Sviluppo: Python di sistema, Codex da npx e cloudflared da vendor/, come da riga di comando.
     return { cmd: process.platform === "win32" ? "python" : "python3",
              args: [path.join(__dirname, "..", "backend", "assistente.py"), ...args], env: {} };
   }
   const exe = process.platform === "win32" ? ".exe" : "";
   const risorse = process.resourcesPath;
   return { cmd: path.join(risorse, "backend", `assistente${exe}`), args,
-           env: { ASSISTENTE_CODEX: path.join(risorse, "codex", `codex${exe}`) } };
+           env: { ASSISTENTE_CODEX: path.join(risorse, "codex", `codex${exe}`),
+                  ASSISTENTE_CLOUDFLARED: path.join(risorse, "cloudflared", `cloudflared${exe}`) } };
 }
 
 async function avviaBackend() {

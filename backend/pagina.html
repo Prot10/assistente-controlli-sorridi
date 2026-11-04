@@ -57,6 +57,25 @@
 /* impostazioni */
 .colonne{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .codice{font:700 22px ui-monospace,monospace;letter-spacing:.12em;color:var(--head)}
+.passi{list-style:none;margin:6px 0 0;padding:0}
+.passo{display:grid;grid-template-columns:26px minmax(0,1fr);gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+.passo>.n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:var(--raised);color:var(--muted);font-weight:700;font-size:12px}
+.passo.ok>.n{border-color:#00b295;background:#00b295;color:#fff}
+.passo.warn>.n{border-color:#f0a63a;background:#f0a63a;color:#fff}
+.passo h3{margin:3px 0 6px;font-size:13.5px;color:var(--head)}
+.passo .meta{margin:0 0 8px}
+.passo ul{margin:4px 0 8px;padding-left:18px;color:var(--muted);font-size:12.5px}
+.esito-wa{display:grid;gap:4px;margin-top:8px;font-size:12.5px}
+.esito-wa .no{color:#c2410c}
+.copia{display:flex;gap:6px;align-items:center;margin:4px 0}
+.copia small{flex:0 0 112px;color:var(--muted)}
+.copia code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--raised);font-size:12px}
+.numeri{display:grid;gap:6px}
+.numeri label{display:flex;gap:10px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.numeri label small{color:var(--muted)}
+.avanzate{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.avanzate summary{cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
+.avanzate .form{margin-top:12px}
 #zoom{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:rgba(4,8,12,.85)}
 #zoom img{max-width:96vw;max-height:94vh;border-radius:8px}
 #toast{position:fixed;bottom:18px;left:18px;z-index:70;display:none;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:var(--shadow);color:var(--ink);font-weight:500}
@@ -139,17 +158,33 @@
           </section>
         </div>
         <section class="panel"><header><h2>WhatsApp Business</h2><span class="chip" id="wa-chip"></span></header>
-          <div class="form">
-            <label class="form-field"><span>ID numero di telefono</span><input class="input" type="text" id="i-wa_phone_number_id"></label>
-            <label class="form-field"><span>Token di accesso</span><input class="input" type="password" id="i-wa_token" autocomplete="off"></label>
-            <label class="form-field"><span>App secret</span><input class="input" type="password" id="i-wa_app_secret" autocomplete="off"></label>
-            <label class="form-field"><span>Token di verifica webhook</span><input class="input" type="password" id="i-wa_verify_token" autocomplete="off"><small>Lo scegliete voi e lo inserite uguale nel pannello Meta.</small></label>
-            <div class="form two"><label class="form-field"><span>Versione API</span><input class="input" type="text" id="i-wa_versione"></label>
-              <label class="form-field"><span>Porta webhook</span><input class="input" type="number" id="i-porta_webhook"></label></div>
-            <label class="form-field"><span>Comando tunnel</span><input class="input" type="text" id="i-comando_tunnel" placeholder="es. cloudflared tunnel run sorridi"><small>Parte insieme all'assistente e rende pubblico solo il webhook.</small></label>
-          </div>
-          <p class="meta" style="margin-top:12px">I campi segreti restano come sono se li lasci vuoti. In Meta il webhook è l'indirizzo pubblico del tunnel seguito da <b>/webhook</b>, con il campo <b>messages</b> sottoscritto.</p>
-          <div class="azioni"><button class="btn soft" id="prova-wa">Prova il collegamento</button><span class="meta" id="esito-wa"></span></div>
+          <p class="meta">Prima serve un account sulla WhatsApp Business Platform di Meta con un numero dedicato: chi segue l'IT lo prepara con la <a href="https://github.com/Prot10/assistente-controlli-sorridi/blob/main/docs/collegare-whatsapp.md" target="_blank" rel="noopener">guida passo passo</a>. Poi bastano questi cinque passaggi.</p>
+          <ol class="passi">
+            <li class="passo" id="p1"><span class="n">1</span><div><h3>Token e app secret</h3>
+              <p class="meta">Il token permanente dell'utente di sistema e l'app secret, copiati dal pannello Meta.</p>
+              <div class="form two"><label class="form-field"><span>Token di accesso</span><input class="input" type="password" id="w-token" autocomplete="off"></label>
+                <label class="form-field"><span>App secret</span><input class="input" type="password" id="w-segreto" autocomplete="off"></label></div>
+              <div class="azioni"><button class="btn primary" id="w-verifica">Verifica</button></div>
+              <div class="esito-wa" id="w1"></div></div></li>
+            <li class="passo" id="p2"><span class="n">2</span><div><h3>Numero</h3><div id="w2"></div></div></li>
+            <li class="passo" id="p3"><span class="n">3</span><div><h3>Attivazione del numero</h3><div id="w3"></div>
+              <div id="w3-pin" hidden><div class="azioni"><input class="input" id="w-pin" inputmode="numeric" maxlength="6" placeholder="PIN di 6 cifre" style="width:150px" autocomplete="off"><button class="btn primary" id="w-registra">Attiva il numero</button></div></div></div></li>
+            <li class="passo" id="p4"><span class="n">4</span><div><h3>Ricezione dei messaggi</h3><div id="w4"></div></div></li>
+            <li class="passo" id="p5"><span class="n">5</span><div><h3>Messaggio di prova</h3><div id="w5"></div></div></li>
+          </ol>
+          <p class="meta">Costi: Meta non fa pagare i messaggi in arrivo e le prime 1.000 risposte al mese per numero. Oltre, ogni risposta costa pochi centesimi e serve un metodo di pagamento su Meta: senza, le risposte si fermano fino al mese dopo.</p>
+          <details class="avanzate"><summary>Impostazioni avanzate</summary>
+            <div class="form">
+              <label class="form-field"><span>Tunnel</span><select id="i-tunnel"><option value="automatico">Automatico (Cloudflare, senza account)</option><option value="personalizzato">Personalizzato (comando e indirizzo vostri)</option></select><small>Automatico: l'indirizzo cambia a ogni avvio e l'assistente lo comunica a Meta da solo.</small></label>
+              <label class="form-field"><span>Comando tunnel</span><input class="input" type="text" id="i-comando_tunnel" placeholder="es. cloudflared tunnel run sorridi"><small>Solo per il tunnel personalizzato: parte insieme all'assistente e deve esporre solo la porta del webhook.</small></label>
+              <label class="form-field"><span>Indirizzo pubblico</span><input class="input" type="text" id="i-indirizzo_pubblico" placeholder="https://whatsapp.esempio.it"><small>Solo per il tunnel personalizzato, senza /webhook.</small></label>
+              <div class="form two"><label class="form-field"><span>ID account WhatsApp (WABA)</span><input class="input" type="text" id="i-wa_waba_id"></label>
+                <label class="form-field"><span>ID numero di telefono</span><input class="input" type="text" id="i-wa_phone_number_id"></label></div>
+              <div class="form two"><label class="form-field"><span>Versione API</span><input class="input" type="text" id="i-wa_versione"></label>
+                <label class="form-field"><span>Porta webhook</span><input class="input" type="number" id="i-porta_webhook"></label></div>
+            </div>
+            <p class="meta" style="margin-top:10px">Gli ID si compilano da soli dopo la verifica del token. Queste impostazioni si salvano con "Salva impostazioni".</p>
+          </details>
         </section>
       </div>
     </section>
@@ -192,11 +227,12 @@ function toast(t) { const e = $("#toast"); e.textContent = t; e.style.display = 
 async function aggiornaStato(forza) {
   stato = await api("/api/stato" + (forza ? "?aggiorna=1" : ""));
   $("#s-codex").className = stato.codex.collegato ? "ok" : ""; $("#s-codex").textContent = stato.codex.collegato ? "ChatGPT collegato" : "ChatGPT da collegare";
-  $("#s-wa").className = stato.whatsapp ? "ok" : ""; $("#s-wa").textContent = stato.whatsapp ? "WhatsApp collegato" : "WhatsApp da configurare";
+  const wa = stato.whatsapp && stato.ricezione;
+  $("#s-wa").className = wa ? "ok" : ""; $("#s-wa").textContent = wa ? "WhatsApp collegato" : stato.whatsapp ? "WhatsApp: ricezione non attiva" : "WhatsApp da configurare";
   $("#s-auto").className = stato.auto_invio ? "ok" : ""; $("#s-auto").textContent = "Invio automatico " + (stato.auto_invio ? "attivo" : "spento");
   $("#n").textContent = stato.da_approvare; $("#n").hidden = !stato.da_approvare;
   $("#codex-chip").className = "chip " + (stato.codex.collegato ? "ok" : "warn"); $("#codex-chip").textContent = stato.codex.collegato ? "Collegato" : "Non collegato";
-  $("#wa-chip").className = "chip " + (stato.whatsapp ? "ok" : "warn"); $("#wa-chip").textContent = stato.whatsapp ? "Configurato" : "Da configurare";
+  $("#wa-chip").className = "chip " + (wa ? "ok" : "warn"); $("#wa-chip").textContent = wa ? "Collegato" : "Da completare";
   $("#codex-stato").textContent = stato.codex.collegato ? "Account ChatGPT collegato: l'assistente può valutare i messaggi." : "Accedi con l'account ChatGPT dell'azienda.";
 }
 
@@ -300,11 +336,11 @@ async function storico() {
 
 // ---------------------------------------------------------------- impostazioni
 const NUMERI = ["porta_webhook", "auto_confidenza"];
-const CAMPI = ["sforzo", "operatore", "wa_phone_number_id", "wa_token", "wa_app_secret", "wa_verify_token", "wa_versione", "porta_webhook", "comando_tunnel", "auto_confidenza"];
+const CAMPI = ["sforzo", "operatore", "tunnel", "comando_tunnel", "indirizzo_pubblico", "wa_waba_id", "wa_phone_number_id", "wa_versione", "porta_webhook", "auto_confidenza"];
 async function impostazioni() {
   const imp = await api("/api/impostazioni");
   $("#modello").textContent = imp.modello;
-  esempi();
+  esempi(); whatsapp();
   for (const k of CAMPI) { const el = $("#i-" + k); if (el.type === "password") { el.value = ""; el.placeholder = imp[k] || "non impostato"; } else el.value = imp[k]; }
   $("#i-auto_invio").checked = imp.auto_invio;
   $$(".auto-dec").forEach(c => c.checked = imp.auto_decisioni.includes(c.value));
@@ -329,11 +365,75 @@ $("#esempi").onchange = async e => {
   const dati = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result.split(",")[1]); r.readAsDataURL(f); });
   try { await api(`/api/esempi/${e.target.dataset.g}`, {dati}); toast("Esempio salvato"); esempi(); aggiornaStato(); } catch (err) { toast(err.message); }
 };
-$("#prova-wa").onclick = async () => {
-  $("#esito-wa").textContent = "Provo…";
-  try { const r = await api("/api/whatsapp/prova", {}); $("#esito-wa").textContent = `Collegato: ${r.verified_name || ""} ${r.display_phone_number || ""}`; }
-  catch (e) { $("#esito-wa").textContent = e.message; }
+
+// WhatsApp: cinque passaggi, ognuno con il suo stato letto da Meta.
+const NOME_STATO = {APPROVED: "nome approvato", PENDING_REVIEW: "nome in revisione da Meta", DECLINED: "nome rifiutato da Meta", NONE: "nome non ancora inviato"};
+const riga = (ok, testo) => `<span class="${ok === null ? "meta" : ok ? "" : "no"}">${ok === null ? "…" : ok ? "✓" : "✗"} ${testo}</span>`;
+const copia = (etichetta, valore) => `<div class="copia"><small>${etichetta}</small><code>${esc(valore)}</code><button class="btn soft sm" data-copia="${esc(valore)}">Copia</button></div>`;
+function passo(n, tono, html) { $("#p" + n).className = "passo " + tono; if (html !== undefined && $("#w" + n).dataset.html !== html) $("#w" + n).dataset.html = $("#w" + n).innerHTML = html; }
+async function whatsapp() {
+  const w = await api("/api/whatsapp"), m = w.meta || {}, r = w.ricezione || {};
+  const waba = (m.wabas || []).find(x => x.id === w.wa_waba_id), num = waba && waba.numeri.find(n => n.id === w.wa_phone_number_id);
+  for (const k of ["wa_waba_id", "wa_phone_number_id"]) if (document.activeElement !== $("#i-" + k)) $("#i-" + k).value = w[k];
+  $("#w-token").placeholder = w.token ? "salvato · incolla per cambiarlo" : "non impostato";
+  $("#w-segreto").placeholder = w.segreto ? "salvato · incolla per cambiarlo" : "non impostato";
+  // 1 · token e secret
+  let t1 = "";
+  if (m.errore) t1 = riga(false, `Meta risponde: ${esc(m.errore)}`);
+  else if (m.app) t1 = [riga(true, `App «${esc(m.app.nome)}»${m.tipo === "SYSTEM_USER" ? ", token di un utente di sistema" : ""}`),
+    riga(!m.scade, m.scade ? `il token scade il ${new Date(m.scade * 1000).toLocaleDateString("it-IT")}: generane uno con scadenza "Mai"` : "il token non scade"),
+    riga(!m.mancano.length, m.mancano.length ? `mancano i permessi ${m.mancano.join(", ")}` : "permessi whatsapp_business_messaging e whatsapp_business_management"),
+    riga(m.segreto_ok, !w.segreto ? "manca l'app secret" : m.segreto_ok ? "app secret corretto" : "l'app secret non corrisponde all'app del token")].join("");
+  passo(1, m.app && !m.scade && !m.mancano.length && m.segreto_ok ? "ok" : w.token ? "warn" : "", t1);
+  // 2 · numero
+  const numeri = (m.wabas || []).flatMap(x => x.numeri.map(n => ({...n, waba: x.id, account: x.nome})));
+  passo(2, num ? "ok" : numeri.length || m.app ? "warn" : "", !m.app ? `<p class="meta">Dopo la verifica del token compaiono qui i numeri dell'account.</p>`
+    : !numeri.length ? `<p class="meta">Il token non vede nessun numero. Nel Business Manager assegna l'account WhatsApp all'utente di sistema (guida, passo 4), poi premi di nuovo Verifica.</p>`
+    : `<div class="numeri">${numeri.map(n => `<label><input type="radio" name="w-numero" value="${esc(n.waba)}|${esc(n.id)}" ${n.id === w.wa_phone_number_id ? "checked" : ""}><span><b>${esc(n.verified_name)}</b> ${esc(n.display_phone_number)}<br><small>${esc(n.account)} · ${NOME_STATO[n.name_status] || esc(n.name_status || "")}</small></span></label>`).join("")}</div>`);
+  // 3 · registrazione sulla Cloud API
+  const attivo = num && num.platform_type === "CLOUD_API";
+  passo(3, attivo ? "ok" : num ? "warn" : "", !num ? `<p class="meta">Scegli prima il numero.</p>` : attivo ? `<div class="esito-wa">${riga(true, `numero attivo sulla Cloud API (${esc(num.status)})`)}</div>`
+    : `<p class="meta">Il numero va attivato una volta sola. Serve il PIN di 6 cifre della verifica in due passaggi: se il numero ne ha già uno usate quello, altrimenti sceglietene uno nuovo e conservatelo con le altre credenziali.</p>`);
+  $("#w3-pin").hidden = !num || attivo;
+  // 4 · ricezione: tunnel, pannello Meta, indirizzo comunicato a Meta
+  const pannello = m.segreto_ok ? Boolean(m.webhook_app && m.webhook_app.messages) : null, auto = w.tunnel === "automatico";
+  let t4 = `<div class="esito-wa">`;
+  if (!w.token) t4 += `<span class="meta">Il tunnel si apre dopo la verifica del token.</span>`;
+  else if (!r.url) t4 += riga(r.errore ? false : null, r.errore ? esc(r.errore) : auto ? "apertura del tunnel" : "tunnel personalizzato senza indirizzo pubblico: inseritelo nelle impostazioni avanzate");
+  else if (r.raggiungibile === null) t4 += riga(null, "provo l'indirizzo pubblico");
+  else {
+    // La prova da questo PC può fallire per un filtro della rete locale anche se Meta arriva: decide la verifica di Meta.
+    if (!r.meta) t4 += riga(r.raggiungibile, r.raggiungibile ? "indirizzo pubblico raggiungibile" : "da questo PC l'indirizzo pubblico non risponde: se Meta lo accetta è un filtro della rete locale");
+    t4 += riga(r.meta === null ? null : r.meta, r.meta ? "Meta manda i messaggi a " + esc(r.url) + (auto ? " (aggiornato da solo a ogni avvio)" : "") : r.meta === false ? esc(r.errore) : "scegli il numero per comunicare l'indirizzo a Meta");
+  }
+  if (m.app) t4 += riga(pannello, pannello ? "webhook dell'app attivo nel pannello Meta, campo messages" : m.segreto_ok ? "manca il webhook nel pannello Meta: vedi sotto" : "il webhook nel pannello si controlla con l'app secret corretto");
+  t4 += `</div>`;
+  if (r.url && r.raggiungibile !== null && !pannello) t4 += `<p class="meta" style="margin-top:10px">Una volta sola: su developers.facebook.com apri l'app → WhatsApp → Configurazione. In Webhook premi Modifica, incolla questi due valori e premi "Verifica e salva". Poi, in Campi del webhook, attiva <b>messages</b>.</p>${copia("URL di callback", r.url)}${copia("Token di verifica", w.wa_verify_token)}`;
+  if (w.token) t4 += `<div class="azioni"><button class="btn soft sm" id="w-ricollega">Ricontrolla</button></div>`;
+  passo(4, r.raggiungibile && r.meta && pannello ? "ok" : w.token ? "warn" : "", t4);
+  // 5 · prova
+  passo(5, w.ultimo_in ? "ok" : "", `<p class="meta">Da un altro telefono scrivete un messaggio WhatsApp al numero: compare in Richieste, e qui l'ora dell'ultimo arrivato.</p>${w.ultimo_in ? `<div class="esito-wa">${riga(true, `ultimo messaggio ricevuto: ${ora(w.ultimo_in)}`)}</div>` : ""}`);
+}
+async function azioneWA(url, corpo, ok) {
+  try { await api(url, corpo); if (ok) toast(ok); } catch (e) { toast(e.message); }
+  whatsapp(); aggiornaStato();
+}
+$("#w-verifica").onclick = async () => {
+  $("#w1").dataset.html = $("#w1").innerHTML = `<span class="meta">Chiedo a Meta…</span>`;
+  await azioneWA("/api/whatsapp/verifica", {wa_token: $("#w-token").value, wa_app_secret: $("#w-segreto").value});
+  $("#w-token").value = $("#w-segreto").value = "";
 };
+$("#w-registra").onclick = () => azioneWA("/api/whatsapp/registra", {pin: $("#w-pin").value.trim()}, "Numero attivato");
+$("#v-impostazioni").addEventListener("change", e => {
+  if (e.target.name !== "w-numero") return;
+  const [waba, numero] = e.target.value.split("|");
+  azioneWA("/api/whatsapp/numero", {waba, numero}, "Numero scelto");
+});
+$("#v-impostazioni").addEventListener("click", e => {
+  const c = e.target.closest("[data-copia]");
+  if (c) navigator.clipboard.writeText(c.dataset.copia).then(() => toast("Copiato"), () => toast("Copia non riuscita: selezionalo a mano"));
+  if (e.target.id === "w-ricollega") { $("#w4").dataset.html = $("#w4").innerHTML = `<span class="meta">Ricontrollo…</span>`; azioneWA("/api/whatsapp/ricollega", {}); }
+});
 async function accedi(dispositivo) {
   await api("/api/codex/accedi", {dispositivo});
   const giro = async () => {
@@ -371,7 +471,7 @@ function tema(scuro) { document.documentElement.dataset.theme = scuro ? "dark" :
 $("#tema").onclick = () => tema(document.documentElement.dataset.theme !== "dark");
 tema(memoria.get("assistente-tema") === "dark");
 piega(memoria.get("assistente-piega") === "1");
-setInterval(() => { aggiornaStato().catch(() => {}); if (vista === "richieste") richieste().catch(() => {}); if (vista === "chat") contatti().catch(() => {}); if (vista === "storico") storico().catch(() => {}); }, 4000);
+setInterval(() => { aggiornaStato().catch(() => {}); if (vista === "richieste") richieste().catch(() => {}); if (vista === "chat") contatti().catch(() => {}); if (vista === "storico") storico().catch(() => {}); if (vista === "impostazioni") whatsapp().catch(() => {}); }, 4000);
 aggiornaStato(true).then(() => { impostazioni(); mostra(); }).catch(e => toast(e.message));
 </script>
 </body>

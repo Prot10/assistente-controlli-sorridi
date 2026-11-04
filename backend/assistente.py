@@ -16,25 +16,47 @@ import csv
 import io
 import json
 import mimetypes
-import shlex
+import re
+import secrets
+import signal
 import subprocess
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
 import webbrowser
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import motore
 from archivio import Archivio, SEGRETE, adesso, cartella_dati
-from whatsapp import Cloud, ErroreWhatsApp, eventi, firma_valida
+from tunnel import Tunnel
+from whatsapp import TLS, Cloud, ErroreWhatsApp, eventi, firma_valida
 
 QUI = Path(__file__).resolve().parent
 ATTESA = 20          # secondi di silenzio prima di analizzare: foto e testo arrivano in più messaggi
 FINESTRA = timedelta(hours=24)  # fuori da questa finestra Meta accetta solo messaggi modello
 APERTE = "('nuova','analisi','proposta','errore')"
+DEL_TUNNEL = ("tunnel", "comando_tunnel", "indirizzo_pubblico", "porta_webhook")
+
+
+def raggiungibile(url, verifica):
+    """Chiama il proprio webhook dall'indirizzo pubblico come farà Meta. Un tunnel nuovo impiega qualche secondo.
+    È solo una diagnosi: una rete che blocca l'indirizzo da dentro non lo blocca per Meta."""
+    prova = secrets.token_hex(4)
+    q = urlencode({"hub.mode": "subscribe", "hub.verify_token": verifica, "hub.challenge": prova})
+    for _ in range(10):
+        try:
+            with urllib.request.urlopen(f"{url}?{q}", timeout=10, context=TLS) as r:
+                if r.read().decode() == prova:
+                    return True
+        except (urllib.error.URLError, OSError):
+            pass
+        time.sleep(2)
+    return False
 
 
 class Assistente:
@@ -44,8 +66,13 @@ class Assistente:
         self.codex = None
         self.media = cartella_dati() / "media"
         self.media.mkdir(exist_ok=True)
-        self.tunnel = None
+        self.tunnel = Tunnel(lambda url: threading.Thread(target=self.collega, args=(url,), daemon=True).start())
+        self.meta = None       # quello che il token permette di vedere su Meta
+        self.ricezione = {}    # indirizzo pubblico del webhook e se Meta lo ha accettato
         self.lock_invio = threading.Lock()
+        self.lock_collega = threading.Lock()
+        if not archivio.impostazioni()["wa_verify_token"]:
+            archivio.salva_impostazioni({"wa_verify_token": secrets.token_urlsafe(18)})
 
     def cloud(self):
         return Cloud(self.a.impostazioni())
@@ -189,11 +216,54 @@ class Assistente:
                         r["operatore"], r["decisa"]])
         return buf.getvalue().encode("utf-8-sig")
 
+    # ------------------------------------------------------------ collegamento a Meta
     def avvia_tunnel(self):
-        cmd = self.a.impostazioni()["comando_tunnel"].strip()
-        if self.tunnel and self.tunnel.poll() is None:
-            self.tunnel.terminate()
-        self.tunnel = subprocess.Popen(shlex.split(cmd, posix=False)) if cmd else None
+        """Il tunnel serve solo quando c'è un token: prima nessuna porta è esposta."""
+        imp = self.a.impostazioni()
+        if imp["wa_token"]:
+            self.tunnel.avvia(imp)
+        else:
+            self.tunnel.ferma()
+
+    def scopri(self):
+        imp = self.a.impostazioni()
+        try:
+            m = self.cloud().scopri(imp["wa_app_secret"], imp["wa_app_id"], imp["wa_waba_id"])
+        except ErroreWhatsApp as e:
+            self.meta = {"errore": str(e)}
+            return self.meta
+        scelta = {"wa_app_id": m["app"]["id"] or ""}
+        numeri = [(w["id"], n["id"]) for w in m["wabas"] for n in w["numeri"]]
+        if len(numeri) == 1 and not imp["wa_phone_number_id"]:
+            scelta.update(wa_waba_id=numeri[0][0], wa_phone_number_id=numeri[0][1])
+        self.a.salva_impostazioni(scelta)
+        self.meta = m
+        return m
+
+    def collega(self, url):
+        """Prova l'indirizzo pubblico da internet, poi lo comunica a Meta per l'account WhatsApp scelto."""
+        with self.lock_collega:
+            imp = self.a.impostazioni()
+            r = {"url": f"{url}/webhook" if url else None, "raggiungibile": None, "meta": None,
+                 "errore": self.tunnel.errore, "quando": adesso()}
+            self.ricezione = r
+            if not url:
+                return
+            r["raggiungibile"] = raggiungibile(r["url"], imp["wa_verify_token"])
+            if imp["wa_token"] and imp["wa_waba_id"]:
+                # Anche se la prova da qui non passa: è la verifica di Meta a contare.
+                try:
+                    self.cloud().indirizza(imp["wa_waba_id"], r["url"], imp["wa_verify_token"])
+                    r["meta"] = True
+                except ErroreWhatsApp as e:
+                    r["meta"], r["errore"] = False, f"Meta non ha accettato l'indirizzo: {e}"
+
+    def vista_whatsapp(self):
+        imp = self.a.impostazioni()
+        ultimo = self.a.q("SELECT MAX(ricevuto) n FROM messaggi WHERE direzione = 'in'")[0]["n"]
+        return {"meta": self.meta, "ricezione": self.ricezione, "tunnel": imp["tunnel"], "ultimo_in": ultimo,
+                "token": bool(imp["wa_token"]), "segreto": bool(imp["wa_app_secret"]),
+                **{k: imp[k] for k in ("wa_waba_id", "wa_phone_number_id", "wa_verify_token")}}
 
 
 # ---------------------------------------------------------------- pagina locale
@@ -252,6 +322,7 @@ def gestore_pagina(app, porta):
                     app.codex = app.accesso.stato()
                 imp = a.impostazioni()
                 return self._json({"codex": app.codex, "whatsapp": app.cloud().configurato(),
+                                   "ricezione": bool(app.ricezione.get("meta")),
                                    "porta_webhook": imp["porta_webhook"], "auto_invio": imp["auto_invio"],
                                    "esempi": motore.esempi_mancanti(),
                                    "da_approvare": a.q(f"SELECT COUNT(*) n FROM richieste WHERE stato IN {APERTE}")[0]["n"]})
@@ -262,6 +333,8 @@ def gestore_pagina(app, porta):
                 for k in SEGRETE:
                     imp[k] = "••••" + imp[k][-4:] if imp[k] else ""
                 return self._json({**imp, "modello": motore.MODELLO})
+            if url.path == "/api/whatsapp":
+                return self._json(app.vista_whatsapp())
             if url.path == "/api/esempi":
                 return self._json({"mancanti": motore.esempi_mancanti()})
             if parti[:2] == ["api", "esempi"] and len(parti) == 3 and parti[2] in ("1", "2", "3", "4"):
@@ -314,14 +387,38 @@ def gestore_pagina(app, porta):
                     vecchia = a.impostazioni()
                     a.salva_impostazioni(corpo)
                     nuova = a.impostazioni()
-                    if nuova["comando_tunnel"] != vecchia["comando_tunnel"]:
+                    if any(nuova[k] != vecchia[k] for k in DEL_TUNNEL):
                         app.avvia_tunnel()
                     return self._json({"ok": True, "riavvio": int(nuova["porta_webhook"]) != int(vecchia["porta_webhook"])})
                 if parti[:2] == ["api", "esempi"] and len(parti) == 3 and parti[2] in ("1", "2", "3", "4"):
                     salva_esempio(int(parti[2]), base64.b64decode(corpo["dati"]))
                     return self._json({"ok": True})
-                if parti == ["api", "whatsapp", "prova"]:
-                    return self._json(app.cloud().prova())
+                if parti == ["api", "whatsapp", "verifica"]:
+                    nuove = {k: corpo[k].strip() for k in ("wa_token", "wa_app_secret") if corpo.get(k, "").strip()}
+                    if nuove.get("wa_token") and nuove["wa_token"] != a.impostazioni()["wa_token"]:
+                        nuove.update(wa_app_id="", wa_waba_id="", wa_phone_number_id="")  # un altro token, un'altra app
+                    a.salva_impostazioni(nuove)
+                    app.scopri()
+                    if not app.tunnel.url or "wa_token" in nuove:
+                        app.avvia_tunnel()
+                    return self._json(app.vista_whatsapp())
+                if parti == ["api", "whatsapp", "numero"]:
+                    a.salva_impostazioni({"wa_waba_id": corpo["waba"], "wa_phone_number_id": corpo["numero"]})
+                    threading.Thread(target=app.collega, args=(app.tunnel.url,), daemon=True).start()
+                    return self._json(app.vista_whatsapp())
+                if parti == ["api", "whatsapp", "registra"]:
+                    if not re.fullmatch(r"\d{6}", corpo.get("pin", "")):
+                        raise ValueError("il PIN è di 6 cifre")
+                    app.cloud().registra(corpo["pin"])
+                    app.scopri()
+                    return self._json(app.vista_whatsapp())
+                if parti == ["api", "whatsapp", "ricollega"]:
+                    app.scopri()
+                    if app.tunnel.url:
+                        threading.Thread(target=app.collega, args=(app.tunnel.url,), daemon=True).start()
+                    else:
+                        app.avvia_tunnel()
+                    return self._json(app.vista_whatsapp())
                 if parti[:2] == ["api", "richieste"] and len(parti) == 4:
                     rid, azione = int(parti[2]), parti[3]
                     if azione == "invia":
@@ -399,18 +496,20 @@ def main():
         raise SystemExit(f"Porta {a.porta} o {porta_wh} già in uso: probabilmente l'assistente è già aperto. ({e})")
     threading.Thread(target=webhook.serve_forever, daemon=True).start()
     threading.Thread(target=app.ciclo, daemon=True).start()
+    if app.a.impostazioni()["wa_token"]:
+        threading.Thread(target=app.scopri, daemon=True).start()
     app.avvia_tunnel()
     # L'app desktop aspetta questa riga per aprire la finestra.
     print(f"Assistente su http://127.0.0.1:{a.porta}  ·  webhook su 127.0.0.1:{porta_wh}/webhook  ·  dati in {cartella_dati()}", flush=True)
     if not a.non_aprire:
         webbrowser.open(f"http://127.0.0.1:{a.porta}")
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))  # chiusura ordinata: il tunnel si ferma con l'assistente
     try:
         pagina.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        if app.tunnel:
-            app.tunnel.terminate()
+        app.tunnel.ferma()
 
 
 if __name__ == "__main__":

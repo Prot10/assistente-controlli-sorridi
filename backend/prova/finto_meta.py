@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Meta finta per provare l'assistente senza un numero WhatsApp vero.
 
-Fa la parte della Graph API (foto, invio, prova del token) e manda all'assistente
+Fa la parte della Graph API (foto, invio, configurazione guidata) e manda all'assistente
 webhook firmati come farebbe Meta, compresi gli stati di consegna.
 
     python prova/finto_meta.py serve --segreto PROVA
+    python prova/finto_meta.py pannello --url https://.../webhook --verifica TOKEN   # il webhook messo a mano nel pannello Meta
     python prova/finto_meta.py manda --nome "Paziente Prova" --numero 390000000001 --testo "Ecco la foto" --foto foto.jpg
 
 Nell'assistente: base API http://127.0.0.1:8399, app secret uguale a --segreto, token qualsiasi.
+Il numero parte non registrato e l'app senza webhook nel pannello, come un account appena creato.
+Webhook messaggi: quello indicato a Meta (override, poi pannello), altrimenti --webhook.
 """
 
 import argparse
@@ -16,6 +19,7 @@ import hmac
 import json
 import threading
 import time
+import urllib.parse
 import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,6 +28,30 @@ from pathlib import Path
 PORTA = 8399
 FOTO = {}
 INVIATI = []
+APP, WABA, NUMERO = "APP-PROVA", "WABA-PROVA", "NUMERO-PROVA"
+CONTO = {"registrato": False, "pannello": None, "override": None}
+
+
+def verifica_url(url, token):
+    """Come Meta: GET con hub.challenge, valido solo se torna indietro uguale."""
+    sfida = uuid.uuid4().hex[:10]
+    q = urllib.parse.urlencode({"hub.mode": "subscribe", "hub.verify_token": token, "hub.challenge": sfida})
+    try:
+        with urllib.request.urlopen(f"{url}?{q}", timeout=20) as r:
+            return r.read().decode() == sfida
+    except OSError:
+        return False
+
+
+def numero():
+    return {"id": NUMERO, "display_phone_number": "+39 000 000 0000", "verified_name": "Sorridi (prova)",
+            "name_status": "APPROVED", "status": "CONNECTED" if CONTO["registrato"] else "PENDING",
+            "platform_type": "CLOUD_API" if CONTO["registrato"] else "NOT_APPLICABLE",
+            "code_verification_status": "VERIFIED", "quality_rating": "GREEN"}
+
+
+def destinazione(a):
+    return CONTO["override"] or CONTO["pannello"] or a.webhook
 
 
 def webhook(url, segreto, valore):
@@ -51,17 +79,40 @@ def serve(a):
 
         def do_GET(self):
             p = self.path.split("?")[0].strip("/").split("/")
+            token = self.headers.get("Authorization", "")[7:]
+            if p[-1] == "debug_token":
+                return self._json({"data": {"app_id": APP, "application": "Assistente Sorridi (prova)", "type": "SYSTEM_USER",
+                                            "is_valid": True, "expires_at": 0,
+                                            "scopes": ["whatsapp_business_messaging", "whatsapp_business_management"],
+                                            "granular_scopes": [{"scope": "whatsapp_business_messaging", "target_ids": [WABA]},
+                                                                {"scope": "whatsapp_business_management", "target_ids": [WABA]}]}})
+            if p[1:] == [APP, "subscriptions"]:
+                if token != f"{APP}|{a.segreto}":
+                    return self._json({"error": {"code": 190, "message": "Invalid OAuth access token"}}, 400)
+                return self._json({"data": [{"object": "whatsapp_business_account", "callback_url": CONTO["pannello"], "active": True,
+                                             "fields": [{"name": "messages", "version": "v26.0"}]}] if CONTO["pannello"] else []})
+            if p[1:] == [WABA]:
+                return self._json({"id": WABA, "name": "Sorridi (prova)"})
+            if p[1:] == [WABA, "phone_numbers"]:
+                return self._json({"data": [numero()]})
+            if p[1:] == [WABA, "subscribed_apps"]:
+                voce = {"whatsapp_business_api_data": {"id": APP, "name": "Assistente Sorridi (prova)"}}
+                if CONTO["override"]:
+                    voce["override_callback_uri"] = CONTO["override"]
+                return self._json({"data": [voce] if CONTO["override"] or CONTO["pannello"] else []})
             if p[0] == "scarica" and p[1] in FOTO:
                 self.send_response(200)
                 self.send_header("Content-Type", "image/jpeg")
                 self.end_headers()
                 return self.wfile.write(FOTO[p[1]])
+            if p[0] == "_destinazione":
+                return self._json({"url": destinazione(a)})
             if p[0] == "inviati":
                 return self._json(INVIATI)
             if len(p) == 2 and p[1] in FOTO:
                 return self._json({"url": f"http://127.0.0.1:{PORTA}/scarica/{p[1]}", "mime_type": "image/jpeg", "id": p[1]})
-            if len(p) == 2:
-                return self._json({"display_phone_number": "+39 000 000 0000", "verified_name": "Sorridi (prova)", "id": p[1]})
+            if p[1:] == [NUMERO]:
+                return self._json(numero())
             self._json({"error": {"code": 100, "message": "non trovato"}}, 404)
 
         def do_POST(self):
@@ -71,7 +122,26 @@ def serve(a):
                 mid = uuid.uuid4().hex[:16]
                 FOTO[mid] = corpo
                 return self._json({"id": mid})
+            if p == ["_pannello"]:
+                d = json.loads(corpo)
+                if not verifica_url(d["url"], d["verifica"]):
+                    return self._json({"error": {"code": 2200, "message": "Callback verification failed"}}, 400)
+                CONTO["pannello"] = d["url"]
+                return self._json({"success": True})
+            if p[1:] == [NUMERO, "register"]:
+                if json.loads(corpo).get("pin", "").isdigit():
+                    CONTO["registrato"] = True
+                    return self._json({"success": True})
+                return self._json({"error": {"code": 100, "message": "pin non valido"}}, 400)
+            if p[1:] == [WABA, "subscribed_apps"]:
+                d = json.loads(corpo or b"{}")
+                if d.get("override_callback_uri") and not verifica_url(d["override_callback_uri"], d.get("verify_token", "")):
+                    return self._json({"error": {"code": 2200, "message": "Callback verification failed"}}, 400)
+                CONTO["override"] = d.get("override_callback_uri")
+                return self._json({"success": True})
             if len(p) == 3 and p[2] == "messages":
+                if not CONTO["registrato"]:
+                    return self._json({"error": {"code": 133010, "message": "Account not registered"}}, 400)
                 msg = json.loads(corpo)
                 wamid = "wamid.PROVA" + uuid.uuid4().hex[:12]
                 INVIATI.append({"id": wamid, **msg})
@@ -80,7 +150,7 @@ def serve(a):
                 def stati():
                     for s in ("sent", "delivered", "read"):
                         time.sleep(1.5)
-                        webhook(a.webhook, a.segreto, {"statuses": [{"id": wamid, "status": s, "timestamp": str(int(time.time())),
+                        webhook(destinazione(a), a.segreto, {"statuses": [{"id": wamid, "status": s, "timestamp": str(int(time.time())),
                                                                       "recipient_id": destinatario}]})
                 threading.Thread(target=stati, daemon=True).start()
                 return self._json({"messaging_product": "whatsapp", "messages": [{"id": wamid}]})
@@ -100,20 +170,28 @@ def manda(a):
     else:
         messaggio.update(type="text", text={"body": a.testo})
     contatto = {"profile": {"name": a.nome}, "wa_id": a.numero, "user_id": f"IT.{a.numero}"}
-    print(webhook(a.webhook, a.segreto, {"contacts": [contatto], "messages": [messaggio]}))
+    dove = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{PORTA}/_destinazione").read())["url"]
+    print(dove, webhook(dove, a.segreto, {"contacts": [contatto], "messages": [messaggio]}))
+
+
+def pannello(a):
+    req = urllib.request.Request(f"http://127.0.0.1:{PORTA}/_pannello", data=json.dumps({"url": a.url, "verifica": a.verifica}).encode())
+    print(urllib.request.urlopen(req).read().decode())
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("comando", choices=["serve", "manda"])
+    ap.add_argument("comando", choices=["serve", "manda", "pannello"])
     ap.add_argument("--segreto", default="PROVA")
     ap.add_argument("--webhook", default="http://127.0.0.1:8341/webhook")
     ap.add_argument("--nome", default="Paziente Prova")
     ap.add_argument("--numero", default="390000000001")
     ap.add_argument("--testo", default="")
     ap.add_argument("--foto")
+    ap.add_argument("--url")
+    ap.add_argument("--verifica")
     a = ap.parse_args()
-    serve(a) if a.comando == "serve" else manda(a)
+    {"serve": serve, "manda": manda, "pannello": pannello}[a.comando](a)
 
 
 if __name__ == "__main__":

@@ -17,20 +17,20 @@ L'app si aggiorna da sola: controlla le nuove versioni all'avvio e ogni 4 ore, l
 
 ## Cosa serve
 - Un account ChatGPT con accesso a Codex.
-- Un numero dedicato collegato alla **WhatsApp Business Platform (Cloud API)** di Meta, con: ID del numero di telefono, token di accesso permanente (utente di sistema), app secret.
-- Un **tunnel** che renda raggiungibile da internet solo l'indirizzo del webhook, per esempio Cloudflare Tunnel o ngrok. Meta manda i messaggi a quell'indirizzo; la pagina dell'assistente resta raggiungibile solo dal computer.
+- Un numero dedicato sulla **WhatsApp Business Platform (Cloud API)** di Meta, con un token permanente di un utente di sistema e l'app secret. Come prepararlo: [docs/collegare-whatsapp.md](docs/collegare-whatsapp.md), insieme ai costi (gratis fino a 1.000 risposte al mese per numero).
 
 ## Prima configurazione
 In **Impostazioni**:
 - **ChatGPT**: "Accedi con ChatGPT" (si apre il browser) oppure "Accedi con un codice".
 - **Esempi della guida**: caricare le 4 foto di esempio della guida "Gestione degli allineatori", una per grado. Il modello le confronta con la foto del paziente. Non sono nel repository perché sono foto di pazienti: Sorridi le riceve a parte.
-- **WhatsApp Business**: ID del numero, token, app secret e un token di verifica scelto da voi. "Prova il collegamento" deve rispondere con il nome del numero.
-- **Comando tunnel**: il comando che apre il tunnel (es. `cloudflared tunnel run sorridi`). L'assistente lo avvia insieme a sé.
+- **WhatsApp Business**: cinque passaggi guidati, ciascuno controllato su Meta.
+  1. Token e app secret: l'assistente ricava da solo l'app, l'account WhatsApp e i numeri.
+  2. Scelta del numero.
+  3. Attivazione del numero sulla Cloud API con il PIN.
+  4. Ricezione: tunnel e webhook. Il webhook nel pannello Meta si imposta una volta sola, poi l'assistente comunica da solo a Meta l'indirizzo nuovo a ogni avvio.
+  5. Messaggio di prova.
 
-Nel pannello dell'app Meta, in WhatsApp → Configurazione:
-- webhook = indirizzo pubblico del tunnel + `/webhook`;
-- token di verifica = quello scelto sopra;
-- sottoscrivere il campo `messages`.
+Il tunnel è incluso: cloudflared apre un tunnel veloce di Cloudflare, senza account, che espone solo la porta del webhook; la pagina dell'assistente resta raggiungibile solo dal computer. Nelle impostazioni avanzate si può usare invece un tunnel vostro con indirizzo fisso.
 
 Su Mac, chiudere la finestra non chiude l'app: il webhook continua a ricevere. Per fermarla, Esci dal menu.
 
@@ -64,14 +64,16 @@ Sulle 37 foto di prova di Sorridi (21 da segnalare), Sol con questo harness ha m
 
 ## Sviluppo
 ```
-backend/     il servizio Python: pagina, webhook, valutazione (assistente.py, motore.py, whatsapp.py, archivio.py)
+backend/     il servizio Python: pagina, webhook, valutazione (assistente.py, motore.py, whatsapp.py, tunnel.py, archivio.py)
 electron/    il guscio desktop: avvia il servizio, apre la finestra, aggiornamenti
-scripts/     build del servizio (PyInstaller), download di Codex, rilascio Mac
+scripts/     build del servizio (PyInstaller), download di Codex e cloudflared, rilascio Mac
+docs/        guida al collegamento di WhatsApp
 ```
 
-Avvio in sviluppo (Python 3.11 con Pillow, Node 22; Codex arriva da npx):
+Avvio in sviluppo (Python 3.11 con `backend/requirements.txt`, Node 22; Codex arriva da npx):
 ```bash
 npm install
+npm run cloudflared
 npm start
 ```
 
@@ -80,7 +82,7 @@ Il solo servizio, nel browser:
 python3 backend/assistente.py
 ```
 
-`backend/prova/finto_meta.py` fa da Meta finta per provare tutto senza un numero vero.
+`backend/prova/finto_meta.py` fa da Meta finta per provare tutto senza un numero vero, compresa la configurazione guidata: il numero parte da attivare e il webhook del pannello si imposta con `finto_meta.py pannello`. Con la Meta finta usate il tunnel personalizzato con indirizzo `http://127.0.0.1:<porta webhook>`.
 
 ### Rilascio
 1. Aumentare `version` in `package.json` e committare.
@@ -91,4 +93,4 @@ python3 backend/assistente.py
    Lo script crea tag e release, costruisce, firma e notarizza l'app per Mac e la carica. Il tag fa partire GitHub Actions (`.github/workflows/release.yml`), che costruisce l'installer per Windows e lo carica nella stessa release.
 
 ## Licenza
-Codice sotto licenza MIT (`LICENSE`). Il nome e il logo di Allineatori Sorridi sono marchi di Sorridi e non sono coperti dalla licenza. I caratteri Josefin Sans e Montserrat hanno le loro licenze in `backend/statico/`.
+Codice sotto licenza MIT (`LICENSE`). Il nome e il logo di Allineatori Sorridi sono marchi di Sorridi e non sono coperti dalla licenza. I caratteri Josefin Sans e Montserrat hanno le loro licenze in `backend/statico/`. L'app include cloudflared di Cloudflare (Apache 2.0) e Codex di OpenAI (Apache 2.0), così come sono distribuiti.

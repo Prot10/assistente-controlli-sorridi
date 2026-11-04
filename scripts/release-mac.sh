@@ -33,6 +33,7 @@ fi
 
 npm run backend
 npm run codex
+npm run cloudflared
 npx electron-builder --mac --publish never
 xcrun stapler validate "dist/mac-arm64/Assistente controlli.app"
 

@@ -10,12 +10,13 @@ from pathlib import Path
 
 PREDEFINITE = {
     "sforzo": "medium", "operatore": "",
-    "wa_token": "", "wa_phone_number_id": "", "wa_app_secret": "", "wa_verify_token": "",
+    "wa_token": "", "wa_app_secret": "", "wa_verify_token": "",
+    "wa_app_id": "", "wa_waba_id": "", "wa_phone_number_id": "",
     "wa_versione": "v26.0", "wa_base": "https://graph.facebook.com",
-    "porta_webhook": 8341, "comando_tunnel": "",
+    "porta_webhook": 8341, "tunnel": "automatico", "comando_tunnel": "", "indirizzo_pubblico": "",
     "auto_invio": False, "auto_decisioni": ["OK"], "auto_confidenza": 90,
 }
-SEGRETE = {"wa_token", "wa_app_secret", "wa_verify_token"}
+SEGRETE = {"wa_token", "wa_app_secret"}
 
 SCHEMA_DB = """
 CREATE TABLE IF NOT EXISTS impostazioni (chiave TEXT PRIMARY KEY, valore TEXT);

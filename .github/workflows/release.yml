@@ -26,14 +26,16 @@ jobs:
       - run: npm ci
       - run: npm run backend
       - run: npm run codex
+      - run: npm run cloudflared
       - name: Prova del servizio impacchettato
-        # Il servizio congelato deve partire, rispondere, trovare il Codex incluso e fare da server degli strumenti.
+        # Il servizio congelato deve partire, rispondere, trovare Codex e cloudflared inclusi e fare da server degli strumenti.
         shell: bash
         env:
           ASSISTENTE_CODEX: ${{ github.workspace }}\vendor\codex\codex.exe
           ASSISTENTE_DATI: ${{ runner.temp }}\dati
         run: |
           "$ASSISTENTE_CODEX" --version
+          vendor/cloudflared/cloudflared.exe --version
           vendor/backend/assistente.exe --porta 8390 --non-aprire > servizio.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8390/api/stato > stato.json && break; sleep 2; done
           cat servizio.log stato.json

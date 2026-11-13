@@ -3,7 +3,6 @@
 import hashlib
 import hmac
 import json
-import mimetypes
 import ssl
 import urllib.error
 import urllib.request
@@ -20,6 +19,9 @@ PERMESSI = {"whatsapp_business_messaging", "whatsapp_business_management"}
 TLS = ssl.create_default_context()
 TLS.load_verify_locations(certifi.where())
 CAMPI_NUMERO = "id,display_phone_number,verified_name,name_status,platform_type,status,code_verification_status,quality_rating"
+
+
+ESTENSIONI = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 
 
 class ErroreWhatsApp(Exception):
@@ -167,7 +169,8 @@ class Cloud:
         if not info.get("url", "").startswith(("https://", self.radice)):
             raise ErroreWhatsApp("URL della foto non valido")
         dati = self._chiama(info["url"], grezzo=True)
-        est = mimetypes.guess_extension(info.get("mime_type", "image/jpeg")) or ".jpg"
+        # Su Windows mimetypes legge il registro e per image/jpeg può rispondere .jfif: estensioni fisse.
+        est = ESTENSIONI.get(info.get("mime_type", "").split(";")[0].strip(), ".jpg")
         p = Path(cartella) / f"{hashlib.sha1(media_id.encode()).hexdigest()[:20]}{est}"
         p.write_bytes(dati)
         return p

@@ -15,7 +15,6 @@ import base64
 import csv
 import io
 import json
-import mimetypes
 import re
 import secrets
 import signal
@@ -29,7 +28,7 @@ import webbrowser
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, unquote, urlencode, urlparse
 
 import motore
 from archivio import ISTRUZIONI_INIZIALI, Archivio, SEGRETE, adesso, cartella_dati
@@ -270,6 +269,7 @@ class Assistente:
 
 # ---------------------------------------------------------------- pagina locale
 
+TIPI_FOTO = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".jfif": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 TIPI_STATICI = {".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2", ".png": "image/png"}
 STATICI = {f.name for f in (QUI / "statico").iterdir() if f.suffix in TIPI_STATICI}
 
@@ -310,7 +310,8 @@ def gestore_pagina(app, porta):
                 return self.send_error(403)
             url = urlparse(self.path)
             q = {k: v[0] for k, v in parse_qs(url.query).items()}
-            parti = url.path.strip("/").split("/")
+            # Gli id dei messaggi WhatsApp finiscono spesso con "=", che la pagina manda come %3D.
+            parti = [unquote(x) for x in url.path.strip("/").split("/")]
             a = app.a
             if url.path == "/":
                 return self._invia((QUI / "pagina.html").read_bytes(), "text/html; charset=utf-8", extra=[(
@@ -359,7 +360,7 @@ def gestore_pagina(app, porta):
                 if not m or not m[0]["media_file"]:
                     return self.send_error(404)
                 p = app.media / Path(m[0]["media_file"]).name
-                return self._invia(p.read_bytes(), mimetypes.guess_type(p.name)[0] or "image/jpeg",
+                return self._invia(p.read_bytes(), TIPI_FOTO.get(p.suffix.lower(), "image/jpeg"),
                                    extra=[("Cache-Control", "private, max-age=86400")])
             if url.path == "/api/statistiche":
                 return self._json(app.statistiche())
@@ -373,7 +374,7 @@ def gestore_pagina(app, porta):
             if self.headers.get("Host") not in host_ok or self.headers.get("X-Assistente") != "1":
                 return self.send_error(403)
             corpo = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
-            parti = urlparse(self.path).path.strip("/").split("/")
+            parti = [unquote(x) for x in urlparse(self.path).path.strip("/").split("/")]
             a = app.a
             operatore = a.impostazioni()["operatore"] or "operatore"
             try:

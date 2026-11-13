@@ -40,8 +40,11 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8390/api/stato > stato.json && break; sleep 2; done
           cat servizio.log stato.json
           grep -q '"testo": "Not logged in"' stato.json
+          # La pagina usa gli stili del CRM in statico/crm: devono essere nel pacchetto.
+          curl -sf http://127.0.0.1:8390/statico/crm/foundations.css | grep -q Sorridi
+          curl -sf -o /dev/null http://127.0.0.1:8390/statico/crm/fonts/josefin-sans-latin-wght-normal.woff2
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
-            | vendor/backend/assistente.exe strumenti-foto backend/statico/sorridi-chiaro.png | grep -q serverInfo
+            | vendor/backend/assistente.exe strumenti-foto backend/statico/crm/sorridi-chiaro.png | grep -q serverInfo
           kill %1 || true
       - name: Installer
         shell: bash

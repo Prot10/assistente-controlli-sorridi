@@ -40,11 +40,12 @@ Il tunnel è incluso: cloudflared apre un tunnel veloce di Cloudflare, senza acc
 Su Mac, chiudere la finestra non chiude l'app: il webhook continua a ricevere. Per fermarla, Esci dal menu.
 
 ## Uso
-La barra laterale porta a Richieste, Chat, Istruzioni, Storico e Impostazioni, e mostra se ChatGPT e WhatsApp sono collegati e se l'invio automatico è attivo. Si apre e si chiude dal pulsante in alto a sinistra; il tema chiaro o scuro si cambia dall'icona in alto a destra.
+La pagina usa la grafica e i componenti del nuovo CRM Sorridi. La barra laterale porta a Richieste, Chat, Istruzioni, Storico e Impostazioni, e mostra se ChatGPT e WhatsApp sono collegati e se l'invio automatico è attivo; si stringe dal pulsante accanto al logo. In alto ci sono la ricerca (nome, numero o paziente, in Richieste e in Chat), il tema chiaro o scuro e le iniziali dell'operatore.
 
-- **Richieste**: i messaggi in arrivo, raggruppati per paziente. L'analisi parte dopo un'attesa di silenzio (2 minuti all'inizio, da 20 secondi a 15 minuti in Impostazioni → Valutazione), perché spesso il medico scrive prima e manda le foto dopo. Durante l'attesa la richiesta mostra il conto alla rovescia, le foto scaricate e **Analizza ora**; durante l'analisi mostra cosa sta facendo l'agente. **Non analizzare** e **Ferma l'analisi** lasciano la richiesta aperta per una risposta a mano. Un'analisi interrotta dalla chiusura dell'app riparte alla riapertura.
+- **Richieste**: i messaggi in arrivo, divisi per caso. L'analisi parte dopo un'attesa di silenzio (2 minuti all'inizio, da 20 secondi a 15 minuti in Impostazioni → Valutazione), perché spesso il medico scrive prima e manda le foto dopo. Durante l'attesa la richiesta mostra il conto alla rovescia, le foto scaricate e **Analizza ora**; durante l'analisi mostra cosa sta facendo l'agente. **Non analizzare** e **Ferma l'analisi** lasciano la richiesta aperta per una risposta a mano. Un'analisi interrotta dalla chiusura dell'app riparte alla riapertura.
+- **Più casi dallo stesso numero**: prima di valutare, una chiamata leggera al modello divide i messaggi per paziente. Due pazienti mandati di fila diventano due richieste, ognuna con la sua risposta e il nome del paziente. Un messaggio che completa una richiesta ancora da inviare (la foto dimenticata, «ecco l'altra») ci viene spostato e la richiesta si rianalizza. Se la richiesta era già chiusa, ne nasce una nuova con «Segue la richiesta N»: il modello rivede anche i messaggi e le foto di allora. Nel dubbio non divide e non collega. Ogni spostamento finisce nel registro e nello zip.
 - Ogni proposta mostra decisione, grado, motivo, azione della guida e una risposta completa, pronta da inviare. Quando il caso va seguito da una persona compare il riquadro rosso **Serve un operatore**: la risposta è comunque scritta come per l'invio. Le azioni sono Invia, Scarta e Rianalizza; "Decisione corretta" registra il giudizio dell'operatore.
-- **Chat**: le conversazioni complete con lo stato di consegna e un campo per i messaggi liberi. Le foto mandate insieme formano un album. Ogni chat si può **rinominare**, **archiviare** (torna tra le chat se il contatto riscrive) o **cancellare** da questo PC; c'è una ricerca per nome o numero.
+- **Chat**: le conversazioni complete con lo stato di consegna e un campo per i messaggi liberi (Invio manda, Maiuscolo+Invio va a capo). L'elenco mostra l'ultimo messaggio e le richieste aperte di ogni contatto; le foto mandate insieme formano un album. Ogni chat si può **rinominare**, **archiviare** (torna tra le chat se il contatto riscrive) o **cancellare** da questo PC.
 - **Notifiche** (Impostazioni → Notifiche): avvisi di Windows per tutti i messaggi, solo per le proposte pronte, solo quando serve un operatore, oppure mai, con o senza suono. Un clic sull'avviso apre la richiesta.
 - **Foto**: nella richiesta sono miniature numerate come le cita il modello («immagine 2»). Un clic apre il visore: frecce tra le foto, zoom con rotella o doppio clic, trascinamento, più contrasto e rotazione.
 - **Istruzioni**: come l'assistente deve scrivere le risposte proposte (tono, domande frequenti, quando passare a un operatore). Si parte da una bozza modificabile; non cambiano la valutazione delle foto.
@@ -76,6 +77,7 @@ Sulle 37 foto di prova di Sorridi (21 da segnalare), Sol con questo harness ha m
 ## Sviluppo
 ```
 backend/     il servizio Python: pagina, webhook, valutazione (assistente.py, motore.py, whatsapp.py, tunnel.py, archivio.py)
+backend/statico/crm/  stili, caratteri e logo copiati senza modifiche dal nuovo CRM (crm-nuovo/packages/ui e la cornice dell'app)
 electron/    il guscio desktop: avvia il servizio, apre la finestra, aggiornamenti
 scripts/     build del servizio (PyInstaller), download di Codex e cloudflared, rilascio Mac
 docs/        guida al collegamento di WhatsApp
@@ -104,4 +106,4 @@ python3 backend/assistente.py
    Lo script crea tag e release, costruisce, firma e notarizza l'app per Mac e la carica. Il tag fa partire GitHub Actions (`.github/workflows/release.yml`), che costruisce l'installer per Windows e lo carica nella stessa release.
 
 ## Licenza
-Codice sotto licenza MIT (`LICENSE`). Il nome e il logo di Allineatori Sorridi sono marchi di Sorridi e non sono coperti dalla licenza. I caratteri Josefin Sans e Montserrat hanno le loro licenze in `backend/statico/`. L'app include cloudflared di Cloudflare (Apache 2.0) e Codex di OpenAI (Apache 2.0), così come sono distribuiti.
+Codice sotto licenza MIT (`LICENSE`). Il nome e il logo di Allineatori Sorridi sono marchi di Sorridi e non sono coperti dalla licenza. I caratteri Josefin Sans e Montserrat hanno le loro licenze in `backend/statico/crm/fonts/`. L'app include cloudflared di Cloudflare (Apache 2.0) e Codex di OpenAI (Apache 2.0), così come sono distribuiti.

@@ -564,7 +564,8 @@ class Assistente:
 
 TIPI_FOTO = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".jfif": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 TIPI_STATICI = {".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2", ".png": "image/png"}
-STATICI = {f.name for f in (QUI / "statico").iterdir() if f.suffix in TIPI_STATICI}
+# Elenco fisso dei file serviti (anche in statico/crm, copiato dal nuovo CRM): nessun percorso costruito dalla richiesta.
+STATICI = {f.relative_to(QUI / "statico").as_posix(): f for f in (QUI / "statico").rglob("*") if f.suffix in TIPI_STATICI}
 
 
 def salva_esempio(grado, dati):
@@ -610,8 +611,8 @@ def gestore_pagina(app, porta):
                 return self._invia((QUI / "pagina.html").read_bytes(), "text/html; charset=utf-8", extra=[(
                     "Content-Security-Policy", "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; "
                     "style-src 'self' 'unsafe-inline'; font-src 'self'")])
-            if parti[0] == "statico" and len(parti) == 2 and parti[1] in STATICI:
-                f = QUI / "statico" / parti[1]
+            if parti[0] == "statico" and "/".join(parti[1:]) in STATICI:
+                f = STATICI["/".join(parti[1:])]
                 return self._invia(f.read_bytes(), TIPI_STATICI[f.suffix])
             if url.path == "/api/stato":
                 if app.codex is None or q.get("aggiorna"):
@@ -645,8 +646,12 @@ def gestore_pagina(app, porta):
             if url.path == "/api/contatti":
                 archiviate = int(q.get("archiviate", 0))
                 return self._json({
-                    "contatti": a.q("SELECT c.*, (SELECT MAX(quando) FROM messaggi m WHERE m.contatto = c.id) ultimo "
-                                    "FROM contatti c WHERE COALESCE(c.archiviata, 0) = ? ORDER BY ultimo DESC", archiviate),
+                    # Ultimo messaggio come anteprima e richieste ancora aperte, come nell'elenco chat di WhatsApp.
+                    "contatti": a.q("SELECT c.*, u.quando ultimo, u.testo ultimo_testo, u.direzione ultimo_dir, "
+                                    "u.media_id IS NOT NULL ultimo_foto, (SELECT COUNT(*) FROM richieste r WHERE r.contatto = c.id "
+                                    f"AND r.stato IN {APERTE}) aperte FROM contatti c LEFT JOIN messaggi u ON u.id = "
+                                    "(SELECT id FROM messaggi m WHERE m.contatto = c.id ORDER BY quando DESC LIMIT 1) "
+                                    "WHERE COALESCE(c.archiviata, 0) = ? ORDER BY ultimo DESC", archiviate),
                     "archiviate": a.q("SELECT COUNT(*) n FROM contatti WHERE archiviata = 1")[0]["n"]})
             if parti[:2] == ["api", "contatti"] and len(parti) == 4 and parti[3] == "messaggi":
                 return self._json([app.vista_messaggio(m) for m in

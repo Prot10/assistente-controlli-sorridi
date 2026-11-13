@@ -41,6 +41,8 @@
 
 ## 6. Uso quotidiano
 - **Attesa**: l'analisi parte 2 minuti dopo l'ultimo messaggio, così testo e foto mandati a distanza finiscono nella stessa richiesta. Si cambia in Impostazioni → Valutazione. Per non aspettare: **Analizza ora**.
+- **Più casi di fila**: se un medico manda due pazienti uno dopo l'altro, l'app li divide in due richieste, ognuna con il nome del paziente e la sua risposta. Una foto mandata dopo va alla richiesta del suo paziente; se quella era già chiusa, compare una nuova richiesta con «Segue la richiesta N» e i messaggi di allora.
+- **Cercare**: la ricerca in alto trova richieste e chat per nome, numero o paziente.
 - **Fermare**: **Non analizzare** (in attesa) o **Ferma l'analisi** (in corso) lasciano la richiesta aperta: scrivete la risposta a mano o scartatela.
 - **Notifiche**: in Impostazioni → Notifiche scegliete quando ricevere l'avviso e se con suono. **Prova la notifica** mostra com'è.
 - **Chat**: rinominate un numero, archiviate le chat chiuse o cancellatele da questo PC. Su WhatsApp restano.

@@ -1,0 +1,309 @@
+/* Cornice del nuovo CRM Sorridi: estratti di crm-nuovo/apps/workspace/src/styles.css copiati il 13 Nov 2026 senza modifiche
+   (barra laterale, barra in alto, area di lavoro, piè di pagina, messaggi). */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.workspace {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+}
+.topbar {
+  min-height: var(--workspace-header-height);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0 var(--workspace-gutter);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+}
+.global-search {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 30rem;
+  color: var(--muted);
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding-inline: var(--space-3) var(--space-1);
+}
+.global-search input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0.625rem 0;
+  font-size: var(--text-sm);
+}
+.global-search button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 2.75rem;
+}
+.topbar-right {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.organization-select .ui-select-trigger {
+  border: none;
+  font-size: var(--text-sm);
+  width: 14.6875rem;
+  max-width: 100%;
+  font-weight: 500;
+}
+.user-avatar {
+  height: 2.375rem;
+  width: 2.375rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--heading);
+  background: var(--surface-soft);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+#main-content {
+  padding: var(--space-6) var(--workspace-gutter);
+  max-width: 105rem;
+  margin: 0 auto;
+  min-height: calc(100vh - 10.3125rem);
+  outline: none;
+}
+#main-content > .notice {
+  margin-bottom: 1.25rem;
+}
+.text-link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: inline-flex;
+  gap: 0.4375rem;
+  align-items: center;
+  text-decoration: none;
+  padding: 0.625rem 0;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  margin-bottom: 1.25rem;
+  text-decoration: none;
+}
+.muted {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.app-footer {
+  padding: var(--space-3) var(--workspace-gutter) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.loading {
+  padding: 2.5rem 1.5rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.mobile-only {
+  display: none;
+}
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: -100px;
+  left: 1rem;
+  background: var(--surface);
+  padding: 0.875rem;
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+.conversation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.4fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.message-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+.message {
+  min-inline-size: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  max-width: 92%;
+}
+.message.own {
+  margin-left: auto;
+  background: var(--action-soft);
+}
+.message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-md);
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+details summary {
+  cursor: pointer;
+  padding-block: var(--space-3);
+  font-size: var(--text-md);
+  color: var(--action);
+}
+@media (max-width: 900px) {
+  .mobile-only {
+    display: inline-flex;
+  }
+  .topbar {
+    gap: var(--space-2);
+    padding-inline: var(--workspace-gutter);
+  }
+  .global-search {
+    flex: 1;
+    width: auto;
+    max-width: none;
+  }
+  .topbar .organization-select {
+    display: none;
+  }
+}
+/* Branding composes the shared navigation without defining a second visual system. */
+.ui-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  min-height: var(--workspace-header-height);
+}
+.ui-sidebar-brand > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--control-height);
+  min-height: var(--control-height);
+  text-decoration: none;
+}
+.ui-sidebar-brand img {
+  width: var(--brand-logo-width);
+  max-width: 100%;
+  height: auto;
+  max-height: var(--control-height);
+  object-fit: contain;
+  display: block;
+}
+.sidebar-toggle {
+  margin-left: auto;
+  flex: 0 0 var(--control-height);
+  width: var(--control-height);
+  padding: 0;
+  background: transparent;
+  color: var(--sidebar-muted);
+  border-color: transparent;
+}
+.sidebar-toggle:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-active-ink);
+}
+.sidebar-toggle svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+.ui-sidebar[data-collapsed="true"] .ui-sidebar-brand {
+  justify-content: center;
+  padding-inline: var(--space-2);
+}
+.ui-sidebar[data-collapsed="true"] .ui-sidebar-brand > a,
+.ui-sidebar[data-collapsed="true"] .nav-text {
+  display: none;
+}
+.ui-sidebar[data-collapsed="true"] .sidebar-toggle {
+  margin-inline: 0;
+}
+.drawer-study {
+  padding: var(--space-3) var(--space-4);
+  color: var(--sidebar-muted);
+  font-size: var(--text-xs);
+}
+.drawer-study .ui-select-trigger {
+  margin-top: var(--space-2);
+  width: 100%;
+}
+.sidebar-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 45;
+}
+@media (max-width: 900px) {
+  .sidebar .desktop-only {
+    display: none;
+  }
+  .sidebar .drawer-study {
+    display: block;
+  }
+  .sidebar .ui-sidebar-brand > button.mobile-only {
+    position: static;
+    color: var(--sidebar-ink);
+    background: transparent;
+  }
+}
+
+.topbar .icon-button:hover {
+  background: var(--surface-soft);
+}
+
+
+/* The section switcher belongs to the workspace frame, separate from record tabs. */
+.workspace-sections {
+  padding: var(--space-2) var(--workspace-gutter);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.workspace-sections:empty {
+  display: none;
+}
+.ui-sidebar-brand img.sidebar-logo-dark {
+  display: none;
+}
+:root[data-theme="dark"] .ui-sidebar-brand img.sidebar-logo-light {
+  display: none;
+}
+:root[data-theme="dark"] .ui-sidebar-brand img.sidebar-logo-dark {
+  display: block;
+}

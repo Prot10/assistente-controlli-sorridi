@@ -1,0 +1,185 @@
+/* Assistente controlli: solo ciò che il CRM non ha già. Colori, spazi e testi solo dai token di crm/foundations.css. */
+[hidden] { display: none !important; }
+body { font-size: var(--text-md); color: var(--ink); }
+.vista:not(.on) { display: none; }
+.desktop-only { display: inline-flex; }
+@media (max-width: 900px) { .desktop-only { display: none; } }
+
+/* Barra laterale: conteggio delle richieste e stato dei servizi */
+.ui-navigation-link .conta { margin-inline-start: auto; }
+.ui-sidebar[data-collapsed="true"] .conta { display: none; }
+.servizio svg { color: var(--warning); }
+.servizio.ok svg { color: var(--success); }
+.ui-sidebar .servizio { font-size: var(--text-xs); min-height: 0; padding-block: var(--space-2); }
+
+/* Ricerca nella barra in alto */
+.global-search .ui-input { border: 0; background: transparent; padding-inline: 0; min-height: 0; }
+.global-search .ui-input:focus-visible { outline: none; }
+.global-search:focus-within { border-color: var(--focus); }
+
+/* Avviso in basso */
+#toast { position: fixed; inset: auto auto var(--space-5) var(--space-5); z-index: 90; max-width: min(28rem, calc(100vw - var(--space-10))); box-shadow: var(--shadow-menu); }
+
+/* ---------------------------------------------------------------- richieste */
+.richiesta { padding: 0; overflow: hidden; }
+.richiesta[data-op="true"] { box-shadow: inset var(--space-1) 0 var(--danger), var(--shadow-card); }
+.richiesta-testa { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-4) var(--panel-padding); border-bottom: 1px solid var(--line); }
+.richiesta-testa > div:first-of-type { flex: 1 1 14rem; min-width: 0; }
+.richiesta-testa h2 { margin: 0; font-size: var(--text-lg); }
+.richiesta-testa .subtitle { line-height: 1.5; }
+.richiesta-testa .badges { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.richiesta-seguito { margin: var(--space-4) var(--panel-padding) 0; }
+.richiesta-corpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+.richiesta-corpo > section { min-width: 0; padding: var(--panel-padding); }
+.richiesta-corpo > section + section { border-inline-start: 1px solid var(--line); }
+.richiesta-corpo .eyebrow { display: block; }
+.richiesta .message-list { margin: 0; gap: var(--space-3); }
+.richiesta .message { max-width: 100%; padding: var(--space-3) var(--space-4); }
+.richiesta .message p { margin-top: var(--space-2); font-size: var(--text-md); }
+.richiesta .message .album + p { margin-top: var(--space-2); }
+.richiesta-esito { display: grid; gap: var(--space-5); align-content: start; }
+.richiesta-esito > * { margin: 0; }
+.richiesta-esito .ui-description-list { gap: var(--space-4); }
+.richiesta-esito .ui-message-draft { margin: 0; display: grid; gap: var(--space-4); }
+.richiesta-esito .ui-toolbar { align-items: center; }
+.richiesta-esito .ui-toolbar .grow { flex: 1; }
+.decisione-corretta { display: flex; align-items: center; gap: var(--space-2); color: var(--muted); font-size: var(--text-sm); }
+.decisione-corretta .ui-select-trigger { min-width: 11rem; }
+.chiusa .message { margin: 0; }
+.notice svg { flex: none; margin-top: var(--space-1); }
+.notice strong { display: block; }
+
+/* Avanzamento dell'analisi: i passi del CRM, con il passo in corso che gira */
+.lavoro .ui-progress-steps { margin: 0; }
+.lavoro .ui-progress-steps li { font-size: var(--text-sm); }
+.lavoro .ui-progress-steps li span svg { width: var(--icon-sm); height: var(--icon-sm); }
+.lavoro .ui-progress-steps time { margin-inline-start: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lavoro .ui-progress-steps [aria-current="step"] span { border-color: var(--action-soft); border-top-color: var(--action); animation: gira 0.9s linear infinite; }
+.tempo { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+@keyframes gira { to { transform: rotate(360deg); } }
+
+/* Album di foto, come su WhatsApp; nelle richieste le foto restano tutte visibili e numerate come le vede il modello */
+.album { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); border-radius: var(--radius-sm); overflow: hidden; margin-top: var(--space-2); }
+.album[data-n="1"] { grid-template-columns: minmax(0, 1fr); max-width: 18rem; }
+.album[data-n="3"] .tassello:first-child { grid-column: span 2; aspect-ratio: 2 / 1; }
+.album.tutte { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); border-radius: 0; overflow: visible; gap: var(--space-2); }
+.album.tutte .tassello { border-radius: var(--radius-sm); }
+.tassello { position: relative; display: block; padding: 0; border: 0; aspect-ratio: 1; background: var(--surface-soft); cursor: zoom-in; overflow: hidden; }
+/* Foto sola: proporzioni vere, ma un'altezza minima finché non arriva, altrimenti il caricamento differito non parte */
+.album[data-n="1"] .tassello { aspect-ratio: auto; min-height: 8rem; max-height: 20rem; }
+.album[data-n="1"] .tassello img { height: auto; max-height: 20rem; }
+.tassello img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform var(--motion-medium) var(--ease-out); }
+.tassello:hover img { transform: scale(1.04); }
+.tassello .numero { position: absolute; top: var(--space-2); left: var(--space-2); display: inline-grid; place-items: center; min-width: var(--space-5); height: var(--space-5); padding: 0 var(--space-1); border-radius: var(--radius-pill); background: var(--heading); color: var(--surface); font-size: var(--text-xs); font-weight: 700; }
+.tassello .altre { position: absolute; inset: 0; display: grid; place-items: center; background: var(--scrim); color: var(--on-brand); font-family: var(--font-display); font-size: var(--text-xl); }
+.rotta img { opacity: 0; }
+.rotta::after { content: "Foto non disponibile"; position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-2); text-align: center; font-size: var(--text-xs); color: var(--muted); }
+
+/* ---------------------------------------------------------------- chat */
+#v-chat { container-type: inline-size; }
+#canale { height: max(28rem, calc(100dvh - 19rem)); }
+#canale .ui-channel-list { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3); min-height: 0; }
+#contatti { overflow: auto; display: grid; align-content: start; gap: var(--space-1); }
+#contatti .empty { padding: var(--space-6) var(--space-2); }
+.ui-message-list-copy { flex: 1; gap: var(--space-1); }
+.ui-message-list-copy .riga { display: flex; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
+.ui-message-list-copy time { color: var(--muted); font-size: var(--text-xs); flex: none; }
+.ui-message-avatar { font-weight: 700; font-size: var(--text-sm); }
+#canale .ui-channel-detail { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; padding: 0; min-height: 0; }
+.filo-testa { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); background: var(--surface); min-width: 0; flex-wrap: wrap; }
+.filo-testa .chi { flex: 1 1 10rem; display: grid; min-width: 0; }
+.filo-testa .chi strong { color: var(--heading); overflow-wrap: anywhere; }
+.filo-testa .chi small { color: var(--muted); font-size: var(--text-xs); }
+.filo-testa .ui-input { flex: 1 1 14rem; }
+.torna { display: none; }
+@container (max-width: 52rem) { .torna { display: inline-flex; } #canale { height: max(28rem, calc(100dvh - 15rem)); } }
+#bolle { margin: 0; padding: var(--space-5); overflow: auto; gap: var(--space-2); align-content: start; }
+#bolle .vuoto { align-self: center; }
+#bolle .message { width: fit-content; background: var(--channel-incoming); max-width: min(var(--channel-message-width), 85%); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+#bolle .message.own { background: var(--channel-outgoing); border-color: transparent; }
+#bolle .message p { margin: var(--space-1) 0 0; font-size: var(--text-md); }
+#bolle .message-meta { gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-1); }
+#bolle .message-meta .no { color: var(--danger); }
+#bolle .album { width: 20rem; max-width: 100%; }
+.giorno { justify-self: center; margin: var(--space-2) 0; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--surface); color: var(--muted); font-size: var(--text-xs); list-style: none; }
+
+/* ---------------------------------------------------------------- istruzioni, storico */
+.istr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); gap: var(--space-6); align-items: start; }
+#istr-testo { min-height: calc(100dvh - 22rem); line-height: 1.65; }
+.istr-guida ul { margin: 0 0 var(--space-5); padding-inline-start: var(--space-5); color: var(--muted); font-size: var(--text-sm); line-height: 1.6; }
+.istr-guida h2 { font-size: var(--text-lg); margin-bottom: var(--space-2); }
+.ui-metric-group { margin-bottom: var(--space-6); }
+.ui-metric-group .ui-metric strong { line-height: 1.1; }
+
+/* ---------------------------------------------------------------- impostazioni */
+.punto { width: var(--space-2); height: var(--space-2); border-radius: var(--radius-pill); background: var(--warning); }
+.punto.ok { background: var(--success); }
+.scheda { max-width: 56rem; }
+.scheda > .panel + .panel { margin-top: 0; }
+.section-heading .badge { flex: none; }
+/* Cinque passaggi di WhatsApp: stessa grafica dei passi del CRM, con contenuto libero accanto al numero */
+.passi-wa { list-style: none; margin: 0; padding: 0; display: grid; }
+.passi-wa > li { position: relative; display: grid; grid-template-columns: var(--space-6) minmax(0, 1fr); gap: var(--space-3); }
+.passi-wa > li:not(:last-child)::after { content: ""; position: absolute; top: calc(var(--space-6) + var(--space-1)); bottom: var(--space-1); left: calc(var(--space-6) / 2); border-left: 1px solid var(--line); }
+.passi-wa .n { width: var(--space-6); height: var(--space-6); display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--text-xs); }
+.passi-wa > li[data-complete="true"] .n { color: var(--action); background: var(--action-soft); }
+.passi-wa > li[aria-current="step"] .n { color: var(--action); background: var(--action-soft); border-color: var(--action); }
+.passi-wa > li > div { min-width: 0; padding-bottom: var(--space-6); display: grid; gap: var(--space-3); }
+.passi-wa h3 { margin: 0; font-size: var(--text-body); line-height: var(--space-6); }
+.passi-wa p { margin: 0; }
+.esito-wa { display: grid; gap: var(--space-1); font-size: var(--text-sm); }
+.esito-wa .si { color: var(--success); }
+.esito-wa .no { color: var(--danger); }
+.esito-wa .attesa { color: var(--muted); }
+.riga-campo { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.riga-campo .ui-input { flex: 1 1 14rem; max-width: 20rem; }
+.copia { display: flex; gap: var(--space-2); align-items: center; }
+.copia small { flex: 0 0 8rem; color: var(--muted); font-size: var(--text-xs); }
+.copia code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-soft); font-size: var(--text-xs); }
+.numeri { display: grid; gap: var(--space-2); }
+.numeri .ui-choice-card small { display: block; }
+.codice { margin-top: var(--space-2); font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; letter-spacing: 0.12em; color: var(--heading); }
+.muted-p { color: var(--muted); font-size: var(--text-sm); margin: 0; }
+.scheda .panel { display: grid; gap: var(--space-4); }
+.scheda .panel > * { margin: 0; }
+.scheda .section-heading { margin: 0; }
+#esempi { --media-tile-width: 11rem; --media-thumbnail-height: 8rem; gap: var(--space-4); }
+#esempi .ui-media-thumbnail.btn { padding: 0; }
+#esempi .ui-media-thumbnail img { object-fit: cover; }
+#esempi .ui-media-tile-body { padding: var(--space-3); }
+#esempi label.btn { cursor: pointer; }
+.ui-choice-row { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* ---------------------------------------------------------------- visore delle foto */
+#visore { position: fixed; inset: 0; z-index: 70; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--brand-deep); color: var(--on-brand); }
+.v-barra { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); }
+.v-barra b { font-variant-numeric: tabular-nums; font-size: var(--text-sm); }
+.v-barra small { color: var(--on-brand-muted); margin-inline-start: var(--space-2); font-size: var(--text-xs); }
+.v-barra .grow { flex: 1; }
+.v-barra button, .v-freccia { display: inline-grid; place-items: center; min-width: var(--control-height); height: var(--control-height); padding: 0 var(--space-2); border: 1px solid var(--on-brand-muted); border-radius: var(--radius-sm); background: transparent; color: inherit; font-size: var(--text-xs); font-weight: 600; font-variant-numeric: tabular-nums; }
+.v-barra button:hover, .v-freccia:hover { background: var(--brand); }
+.v-barra button[aria-pressed="true"] { background: var(--brand-accent); border-color: var(--brand-accent); color: var(--brand-deep); }
+.v-barra .sep { width: 1px; height: var(--space-5); margin: 0 var(--space-1); background: var(--on-brand-muted); }
+.v-palco { position: relative; overflow: hidden; cursor: grab; touch-action: none; }
+.v-palco.tira { cursor: grabbing; }
+.v-palco img { position: absolute; left: 50%; top: 50%; max-width: none; user-select: none; transform-origin: center; will-change: transform; }
+.v-palco img.contrasto { filter: contrast(1.7) brightness(1.08); }
+.v-freccia { position: absolute; top: 50%; width: var(--space-12); height: 4rem; margin-top: -2rem; background: var(--brand-deep); }
+.v-freccia.sx { left: var(--space-4); }
+.v-freccia.dx { right: var(--space-4); }
+.v-strip { display: flex; justify-content: center; gap: var(--space-2); padding: var(--space-3); overflow-x: auto; }
+.v-strip button { flex: 0 0 3.25rem; height: 3.25rem; padding: 0; border: 2px solid transparent; border-radius: var(--radius-sm); overflow: hidden; background: none; opacity: 0.55; }
+.v-strip button.on { border-color: var(--brand-accent); opacity: 1; }
+.v-strip img { width: 100%; height: 100%; object-fit: cover; }
+
+@media (max-width: 900px) {
+  .richiesta-corpo, .istr { grid-template-columns: minmax(0, 1fr); }
+  .richiesta-corpo > section + section { border-inline-start: 0; border-top: 1px solid var(--line); }
+  .ui-metric-group { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Menu a tendina del CRM ricostruito da componenti.js: il <select> nativo resta solo come valore */
+select.ui-select-native { display: none; }
+.decisione-corretta { white-space: nowrap; }
+.decisione-corretta .ui-select-trigger { width: auto; }

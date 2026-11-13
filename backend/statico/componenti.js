@@ -109,14 +109,19 @@ addEventListener("pointerdown", (e) => {
 addEventListener("resize", chiudi);
 addEventListener("scroll", (e) => { if (aperto && !aperto.lista.contains(e.target)) chiudi(); }, true);
 
-// Finestra di conferma al posto di confirm(): risolve true solo con il pulsante di conferma.
-export function conferma(titolo, testo, azione = "Conferma", tono = "primary") {
+// Finestra di conferma al posto di confirm(), con il markup del Dialog del CRM: risolve true solo con il pulsante di conferma.
+export function conferma(titolo, testo, azione = "Conferma") {
   const d = document.createElement("dialog");
   d.className = "ui-dialog";
-  d.innerHTML = `<h2></h2><p></p><form method="dialog" class="actions"><button class="btn soft md" value="no">Annulla</button><button class="btn ${tono} md" value="si"></button></form>`;
+  d.dataset.size = "compact";
+  d.setAttribute("aria-labelledby", "conferma-titolo");
+  d.setAttribute("aria-describedby", "conferma-testo");
+  d.innerHTML = `<div class="ui-dialog-header"><div><h2 id="conferma-titolo"></h2><p id="conferma-testo"></p></div></div>` +
+    `<div class="actions"><button type="button" class="btn btn-secondary" value="no">Annulla</button><button type="button" class="btn btn-primary" value="si"></button></div>`;
   d.querySelector("h2").textContent = titolo;
   d.querySelector("p").textContent = testo;
   d.querySelector("[value=si]").textContent = azione;
+  d.querySelectorAll("button").forEach((b) => (b.onclick = () => d.close(b.value)));
   document.body.append(d);
   d.showModal();
   return new Promise((ok) => d.addEventListener("close", () => { ok(d.returnValue === "si"); d.remove(); }));

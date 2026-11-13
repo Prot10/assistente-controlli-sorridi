@@ -1,6 +1,6 @@
 # Collegare WhatsApp all'Assistente controlli
 
-Guida per chi segue l'IT. La parte su Meta si fa una volta sola e richiede circa 30-45 minuti; il resto lo fa l'app, che mostra un passaggio alla volta in **Impostazioni → WhatsApp Business** e controlla ogni passaggio interrogando Meta.
+Guida per chi segue l'IT. La parte su Meta si fa una volta sola e richiede circa 30-45 minuti; il resto lo fa l'app, che mostra un passaggio alla volta in **Impostazioni → WhatsApp** e controlla ogni passaggio interrogando Meta.
 
 L'assistente usa la **WhatsApp Business Platform (Cloud API)** di Meta, cioè l'accesso ufficiale per i programmi. Non è l'app WhatsApp Business del telefono. Meta cambia spesso il proprio pannello, quindi i nomi dei menu possono essere un po' diversi da quelli scritti qui.
 
@@ -43,7 +43,7 @@ developers.facebook.com → l'app → **Impostazioni app → Di base → Chiave 
 Finché l'app è in modalità sviluppo, Meta non invia all'assistente tutti i messaggi dei pazienti.
 
 ## Nell'assistente
-Aprite **Impostazioni → WhatsApp Business** e seguite i cinque passaggi. Ognuno diventa verde quando Meta conferma che è a posto.
+Aprite **Impostazioni → WhatsApp** e seguite i cinque passaggi. Ognuno diventa verde quando Meta conferma che è a posto.
 
 1. **Token e app secret**: incollateli e premete **Verifica**. L'assistente controlla che il token non scada, che abbia i due permessi e che il secret sia quello dell'app.
 2. **Numero**: compaiono i numeri dell'account. Se ce n'è uno solo, viene scelto da solo.

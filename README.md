@@ -22,10 +22,13 @@ L'app si aggiorna da sola: controlla le nuove versioni all'avvio e ogni 4 ore, l
 - Un numero dedicato sulla **WhatsApp Business Platform (Cloud API)** di Meta, con un token permanente di un utente di sistema e l'app secret. Come prepararlo: [docs/collegare-whatsapp.md](docs/collegare-whatsapp.md), insieme ai costi (gratis fino a 1.000 risposte al mese per numero).
 
 ## Prima configurazione
-In **Impostazioni**:
+In **Impostazioni**, divise in quattro schede:
+- **WhatsApp**: il collegamento in cinque passaggi, qui sotto, e le impostazioni avanzate del tunnel.
 - **ChatGPT**: "Accedi con ChatGPT" (si apre il browser) oppure "Accedi con un codice".
-- **Esempi della guida**: caricare le 4 foto di esempio della guida "Gestione degli allineatori", una per grado. Il modello le confronta con la foto del paziente. Non sono nel repository perché sono foto di pazienti: Sorridi le riceve a parte.
-- **WhatsApp Business**: cinque passaggi guidati, ciascuno controllato su Meta.
+- **Valutazione**: modello, livello di ragionamento ed **esempi della guida**. Caricare le 4 foto di esempio della guida "Gestione degli allineatori", una per grado. Il modello le confronta con la foto del paziente. Non sono nel repository perché sono foto di pazienti: Sorridi le riceve a parte.
+- **Invio**: il nome dell'operatore che firma gli invii e l'invio automatico.
+
+I cinque passaggi di **WhatsApp**, ciascuno controllato su Meta:
   1. Token e app secret: l'assistente ricava da solo l'app, l'account WhatsApp e i numeri.
   2. Scelta del numero.
   3. Attivazione del numero sulla Cloud API con il PIN.
@@ -37,10 +40,12 @@ Il tunnel è incluso: cloudflared apre un tunnel veloce di Cloudflare, senza acc
 Su Mac, chiudere la finestra non chiude l'app: il webhook continua a ricevere. Per fermarla, Esci dal menu.
 
 ## Uso
-La barra laterale porta a Richieste, Chat, Storico e Impostazioni, e mostra se ChatGPT e WhatsApp sono collegati e se l'invio automatico è attivo.
+La barra laterale porta a Richieste, Chat, Istruzioni, Storico e Impostazioni, e mostra se ChatGPT e WhatsApp sono collegati e se l'invio automatico è attivo. Si apre e si chiude dal pulsante in alto a sinistra; il tema chiaro o scuro si cambia dall'icona in alto a destra.
 
 - **Richieste**: i messaggi in arrivo, raggruppati per paziente (si aspettano 20 secondi di silenzio, perché foto e testo arrivano separati). Ogni richiesta mostra decisione, grado, motivo, azione della guida e la risposta da inviare. Le azioni sono Invia, Scarta e Rianalizza. "Decisione corretta" registra il giudizio dell'operatore.
 - **Chat**: le conversazioni complete, con lo stato di consegna, e un campo per scrivere messaggi liberi.
+- **Foto**: nella richiesta sono miniature numerate come le cita il modello («immagine 2»). Un clic apre il visore: frecce tra le foto, zoom con rotella o doppio clic, trascinamento, più contrasto e rotazione.
+- **Istruzioni**: come l'assistente deve scrivere le risposte proposte (tono, domande frequenti, quando passare a un operatore). Si parte da una bozza modificabile; non cambiano la valutazione delle foto.
 - **Storico**: quante proposte sono state accettate senza modifiche, modificate o scartate, e quanto spesso l'operatore conferma la decisione del modello. Si può esportare in CSV.
 - **Invio automatico**: spento all'inizio. Quando è attivo, manda da solo solo le foto di controllo con una decisione ammessa, confidenza sopra la soglia e senza richiesta di operatore.
 
@@ -52,6 +57,7 @@ La valutazione è un piccolo harness costruito per questo compito, in `backend/h
 - `valuta-fit.md`: scala da 0 a 3 per dente (banda incisale rispetto alla corona) e tabella di decisione;
 - `ispeziona-foto.md`: come usare gli strumenti sulla foto;
 - `esempi.md`: i 4 esempi della guida, allegati dopo la foto del paziente;
+- `istruzioni-sorridi.md`: la bozza iniziale della pagina Istruzioni; il testo salvato dallo staff entra nel prompt solo per la risposta suggerita;
 - `schema.json`: la risposta, con i gradi dente per dente.
 
 Il modello può solo chiamare `griglia` e `zoom` sulle foto del paziente (`backend/strumenti_foto.py`, al massimo 4 operazioni). Tutti gli altri strumenti di Codex sono spenti; se il modello prova a usarne uno, l'esito viene scartato.

@@ -79,6 +79,10 @@
 .istr-guida h2{margin:0 0 6px;font-size:12.5px}.istr-guida h2+ul{margin-bottom:16px}
 .istr-guida ul{margin:0;padding-left:18px;color:var(--muted);font-size:12.5px;line-height:1.55}
 /* impostazioni */
+.schede{margin:0 0 18px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.scheda{max-width:860px}
+.punto{width:7px;height:7px;border-radius:50%;background:#f0a63a}.punto.ok{background:#00b295}
+.tabs button.on .punto{box-shadow:0 0 0 2px var(--solid)}
 .colonne{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .codice{font:700 22px ui-monospace,monospace;letter-spacing:.12em;color:var(--head)}
 .passi{list-style:none;margin:6px 0 0;padding:0}
@@ -187,33 +191,15 @@
     </section>
 
     <section class="vista" id="v-impostazioni">
-      <header class="page-head"><div><span class="eyebrow">Assistente controlli</span><h1>Impostazioni</h1><p>Account ChatGPT, numero WhatsApp Business e regole di invio.</p></div>
+      <header class="page-head"><div><span class="eyebrow">Assistente controlli</span><h1>Impostazioni</h1><p>Collegamenti, valutazione delle foto e regole di invio.</p></div>
         <div class="page-actions"><button class="btn primary md" id="salva">Salva impostazioni</button></div></header>
-      <div class="colonne">
-        <div class="stack">
-          <section class="panel"><header><h2>ChatGPT</h2><span class="chip" id="codex-chip"></span></header>
-            <p class="meta" id="codex-stato"></p>
-            <div class="azioni"><button class="btn primary" id="accedi">Accedi con ChatGPT</button><button class="btn soft" id="accedi-codice">Accedi con un codice</button><button class="btn danger" id="esci">Esci</button></div>
-            <div id="accesso"></div>
-            <div class="form two" style="margin-top:18px">
-              <div class="form-field"><span>Modello</span><p class="meta code" id="modello"></p></div>
-              <label class="form-field"><span>Ragionamento</span><select id="i-sforzo"><option value="low">Basso</option><option value="medium">Medio</option><option value="high">Alto</option></select></label>
-              <label class="form-field"><span>Nome operatore</span><input class="input" type="text" id="i-operatore"><small>Compare nello storico accanto a ogni invio.</small></label>
-            </div>
-          </section>
-          <section class="panel"><header><h2>Esempi della guida</h2><span class="chip" id="es-chip"></span></header>
-            <p class="meta">Le 4 foto della guida "Gestione degli allineatori", una per grado: il modello le usa per tarare il giudizio. Sono foto di pazienti, quindi restano solo su questo PC e non fanno parte dell'app.</p>
-            <div class="esempi" id="esempi"></div>
-          </section>
-          <section class="panel"><header><h2>Invio automatico</h2></header>
-            <label class="switch"><input type="checkbox" id="i-auto_invio"><i></i><span>Invia da solo le risposte che rispettano queste condizioni</span></label>
-            <div class="form two" style="margin-top:14px">
-              <div class="form-field"><span>Decisioni</span><div class="ui-choice-row"><label class="ui-choice ui-choice-card"><input type="checkbox" class="ui-choice-input auto-dec" value="OK"><span>Va bene</span></label><label class="ui-choice ui-choice-card"><input type="checkbox" class="ui-choice-input auto-dec" value="NON_OK"><span>Non va bene</span></label></div></div>
-              <div class="form-field"><span>Confidenza minima</span><div class="stepper" id="passo"><button type="button" tabindex="-1" data-d="-5" aria-label="Diminuisci"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button><input id="i-auto_confidenza" inputmode="numeric" aria-label="Confidenza minima"><em>%</em><button type="button" tabindex="-1" data-d="5" aria-label="Aumenta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
-            </div>
-            <p class="meta" style="margin-top:12px">Solo foto di controllo che non chiedono un operatore. Attivalo dopo aver visto nello storico quante proposte vengono confermate senza modifiche.</p>
-          </section>
-        </div>
+      <nav class="tabs schede" id="schede" role="tablist" aria-label="Sezioni delle impostazioni">
+        <button role="tab" data-s="whatsapp" class="on"><i class="punto" id="t-wa"></i>WhatsApp</button>
+        <button role="tab" data-s="chatgpt"><i class="punto" id="t-codex"></i>ChatGPT</button>
+        <button role="tab" data-s="valutazione"><i class="punto" id="t-es"></i>Valutazione</button>
+        <button role="tab" data-s="invio">Invio</button>
+      </nav>
+      <div class="scheda" data-s="whatsapp" role="tabpanel">
         <section class="panel"><header><h2>WhatsApp Business</h2><span class="chip" id="wa-chip"></span></header>
           <p class="meta">Prima serve un account sulla WhatsApp Business Platform di Meta con un numero dedicato: chi segue l'IT lo prepara con la <a href="https://github.com/Prot10/assistente-controlli-sorridi/blob/main/docs/collegare-whatsapp.md" target="_blank" rel="noopener">guida passo passo</a>. Poi bastano questi cinque passaggi.</p>
           <ol class="passi">
@@ -243,6 +229,43 @@
             <p class="meta" style="margin-top:10px">Gli ID si compilano da soli dopo la verifica del token. Queste impostazioni si salvano con "Salva impostazioni".</p>
           </details>
         </section>
+      </div>
+      <div class="scheda" data-s="chatgpt" role="tabpanel" hidden>
+        <section class="panel"><header><h2>Account ChatGPT</h2><span class="chip" id="codex-chip"></span></header>
+          <p class="meta">L'assistente valuta i messaggi con l'abbonamento ChatGPT di Sorridi. Serve un accesso solo la prima volta su questo PC.</p>
+          <p class="meta" id="codex-stato"></p>
+            <div class="azioni"><button class="btn primary" id="accedi">Accedi con ChatGPT</button><button class="btn soft" id="accedi-codice">Accedi con un codice</button><button class="btn danger" id="esci">Esci</button></div>
+            <div id="accesso"></div>
+        </section>
+      </div>
+      <div class="scheda" data-s="valutazione" role="tabpanel" hidden>
+        <div class="stack">
+          <section class="panel"><header><h2>Modello</h2></header>
+            <div class="form two">
+              <div class="form-field"><span>Modello</span><p class="meta code" id="modello"></p><small>Scelto sulle foto di prova del 4 novembre.</small></div>
+              <label class="form-field"><span>Ragionamento</span><select id="i-sforzo"><option value="low">Basso</option><option value="medium">Medio</option><option value="high">Alto</option></select><small>Più alto è più attento, ma più lento.</small></label>
+            </div>
+          </section>
+          <section class="panel"><header><h2>Esempi della guida</h2><span class="chip" id="es-chip"></span></header>
+            <p class="meta">Le 4 foto della guida "Gestione degli allineatori", una per grado: il modello le usa per tarare il giudizio. Sono foto di pazienti, quindi restano solo su questo PC e non fanno parte dell'app.</p>
+            <div class="esempi" id="esempi"></div>
+          </section>
+        </div>
+      </div>
+      <div class="scheda" data-s="invio" role="tabpanel" hidden>
+        <div class="stack">
+          <section class="panel"><header><h2>Operatore</h2></header>
+            <label class="form-field"><span>Nome operatore</span><input class="input" type="text" id="i-operatore"><small>Firma gli invii fatti da questo PC e compare nello storico.</small></label>
+          </section>
+          <section class="panel"><header><h2>Invio automatico</h2></header>
+            <label class="switch"><input type="checkbox" id="i-auto_invio"><i></i><span>Invia da solo le risposte che rispettano queste condizioni</span></label>
+            <div class="form two" style="margin-top:14px">
+              <div class="form-field"><span>Decisioni</span><div class="ui-choice-row"><label class="ui-choice ui-choice-card"><input type="checkbox" class="ui-choice-input auto-dec" value="OK"><span>Va bene</span></label><label class="ui-choice ui-choice-card"><input type="checkbox" class="ui-choice-input auto-dec" value="NON_OK"><span>Non va bene</span></label></div></div>
+              <div class="form-field"><span>Confidenza minima</span><div class="stepper" id="passo"><button type="button" tabindex="-1" data-d="-5" aria-label="Diminuisci"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button><input id="i-auto_confidenza" inputmode="numeric" aria-label="Confidenza minima"><em>%</em><button type="button" tabindex="-1" data-d="5" aria-label="Aumenta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
+            </div>
+            <p class="meta" style="margin-top:12px">Solo foto di controllo che non chiedono un operatore. Attivalo dopo aver visto nello storico quante proposte vengono confermate senza modifiche.</p>
+          </section>
+        </div>
       </div>
     </section>
   </main>
@@ -302,8 +325,8 @@ async function aggiornaStato(forza) {
   $("#s-wa").className = wa ? "ok" : ""; $("#s-wa").textContent = wa ? "WhatsApp collegato" : stato.whatsapp ? "WhatsApp: ricezione non attiva" : "WhatsApp da configurare";
   $("#s-auto").className = stato.auto_invio ? "ok" : ""; $("#s-auto").textContent = "Invio automatico " + (stato.auto_invio ? "attivo" : "spento");
   $("#n").textContent = stato.da_approvare; $("#n").hidden = !stato.da_approvare;
-  $("#codex-chip").className = "chip " + (stato.codex.collegato ? "ok" : "warn"); $("#codex-chip").textContent = stato.codex.collegato ? "Collegato" : "Non collegato";
-  $("#wa-chip").className = "chip " + (wa ? "ok" : "warn"); $("#wa-chip").textContent = wa ? "Collegato" : "Da completare";
+  $("#t-codex").className = "punto" + (stato.codex.collegato ? " ok" : ""); $("#codex-chip").className = "chip " + (stato.codex.collegato ? "ok" : "warn"); $("#codex-chip").textContent = stato.codex.collegato ? "Collegato" : "Non collegato";
+  $("#t-wa").className = "punto" + (wa ? " ok" : ""); $("#wa-chip").className = "chip " + (wa ? "ok" : "warn"); $("#wa-chip").textContent = wa ? "Collegato" : "Da completare";
   $("#codex-stato").textContent = stato.codex.collegato ? "Account ChatGPT collegato: l'assistente può valutare i messaggi." : "Accedi con l'account ChatGPT dell'azienda.";
 }
 
@@ -395,6 +418,16 @@ $("#manda-libero").onclick = async () => {
   try { await api(`/api/contatti/${encodeURIComponent(contatto)}/invia`, {testo: t}); $("#testo-libero").value = ""; filo(); } catch (e) { toast(e.message); }
 };
 
+// ---------------------------------------------------------------- schede delle impostazioni
+function scheda(s) {
+  if (!$(`.scheda[data-s="${s}"]`)) s = "whatsapp";
+  $$("#schede button").forEach(b => { const on = b.dataset.s === s; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
+  $$(".scheda").forEach(d => d.hidden = d.dataset.s !== s);
+  memoria.set("assistente-scheda", s);
+}
+$("#schede").onclick = e => { const b = e.target.closest("button[data-s]"); if (b) scheda(b.dataset.s); };
+scheda(memoria.get("assistente-scheda") || "whatsapp");
+
 // ---------------------------------------------------------------- istruzioni
 let istrSalvate = "";
 function statoIstr(m) {
@@ -453,7 +486,7 @@ $("#salva").onclick = async () => {
 const GRADI = {1: "Grado 1 · aderente", 2: "Grado 2 · lieve-moderato", 3: "Grado 3 · moderato-severo", 4: "Grado 4 · incongruente"};
 async function esempi() {
   const mancano = (await api("/api/esempi")).mancanti;
-  $("#es-chip").className = "chip " + (mancano.length ? "warn" : "ok");
+  $("#t-es").className = "punto" + (mancano.length ? "" : " ok"); $("#es-chip").className = "chip " + (mancano.length ? "warn" : "ok");
   $("#es-chip").textContent = mancano.length ? `${4 - mancano.length} di 4` : "Completi";
   $("#esempi").innerHTML = Object.entries(GRADI).map(([g, t]) => `<figure>${mancano.includes(+g) ? `<div class="vuoto">Manca</div>` : `<img src="/api/esempi/${g}?v=${Date.now()}" alt="${t}">`}
     <figcaption>${t}</figcaption><label class="btn soft sm">Carica<input type="file" accept="image/jpeg,image/png" data-g="${g}" hidden></label></figure>`).join("");

@@ -13,7 +13,7 @@
 
 ## 3. Collegare ChatGPT
 - **Impostazioni → ChatGPT → Accedi con ChatGPT**, con l'account aziendale. Serve un piano che includa Codex, per esempio Plus o Team.
-- In **Esempi della guida**, caricate le 4 foto di esempio (inviate a parte), una per grado.
+- In **Impostazioni → Valutazione → Esempi della guida**, caricate le 4 foto di esempio (inviate a parte), una per grado.
 
 ## 4. Collegare WhatsApp
 **Serve:** un numero dedicato che non sia attivo su WhatsApp. Il numero dell'attuale app WhatsApp Business non si può usare.
@@ -26,7 +26,7 @@
 5. Copiate l'**app secret** da Impostazioni app → Di base.
 6. Inserite l'URL della privacy policy e portate l'app in modalità **Live**.
 
-**Nell'assistente** (Impostazioni → WhatsApp Business): cinque passaggi, ognuno diventa verde quando Meta conferma.
+**Nell'assistente** (Impostazioni → WhatsApp): cinque passaggi, ognuno diventa verde quando Meta conferma.
 1. Incollate **token** e **app secret**, poi premete **Verifica**.
 2. Scegliete il **numero**. Se l'app chiede l'**ID dell'account WhatsApp**, lo trovate su business.facebook.com → Impostazioni → Account → Account di messaggistica, sotto il nome dell'account.
 3. **Attivate** il numero con un PIN di 6 cifre.

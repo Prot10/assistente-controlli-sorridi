@@ -22,6 +22,7 @@ QUI = Path(__file__).resolve().parent
 HARNESS = QUI / "harness"
 ISTRUZIONI = ["messaggi.md", "valuta-fit.md", "ispeziona-foto.md"]
 SCHEMA = HARNESS / "schema.json"
+SCHEMA_SMISTA = HARNESS / "smista.json"
 # Scelto sulle 42 foto di prova il 4 Nov 2026: gpt-6.1-terra mancava troppi "non ok".
 MODELLO = "gpt-6.1-sol"
 VERSIONE_CODEX = "0.166.0"
@@ -164,8 +165,10 @@ def prompt(messaggi, con_esempi, istruzioni="", contesto=()):
     righe, n = [], 0
     for m in messaggi:
         n += bool(m["immagine"])
-        righe.append({"ora": m["quando"].strftime("%d/%m %H:%M"), "testo": m["testo"],
-                      "foto": f"immagine {n}" if m["immagine"] else None})
+        riga = {"ora": m["quando"].strftime("%d/%m %H:%M"), "testo": m["testo"], "foto": f"immagine {n}" if m["immagine"] else None}
+        if m.get("gia_gestito"):
+            riga["gia_gestito"] = True
+        righe.append(riga)
     dati = json.dumps(righe, ensure_ascii=False, indent=1).replace("<", "\\u003c")
     parti = [(HARNESS / f).read_text(encoding="utf-8") for f in ISTRUZIONI + (["esempi.md"] if con_esempi else [])]
     if istruzioni.strip():
@@ -176,6 +179,12 @@ def prompt(messaggi, con_esempi, istruzioni="", contesto=()):
                      "risposta resta sempre il messaggio completo da inviare, senza dire che risponderà un operatore. "
                      "Non cambiano la valutazione delle foto, la decisione, il grado né il formato JSON.\n"
                      f"<istruzioni_staff>\n{istruzioni.strip()}\n</istruzioni_staff>")
+    if any(m.get("gia_gestito") for m in messaggi):
+        parti.append("## Seguito di una richiesta già gestita\n"
+                     "Il mittente ha aggiunto messaggi a un caso a cui Sorridi ha già risposto (la risposta è tra i messaggi "
+                     "precedenti). I messaggi con `gia_gestito` sono quelli di allora: valuta il caso con tutte le foto, "
+                     "vecchie e nuove, e scrivi la risposta ai messaggi nuovi tenendo conto di quella già inviata, "
+                     "senza ripeterla.")
     if contesto:
         prima = json.dumps([{"ora": m["quando"].strftime("%d/%m %H:%M"), "da": m["da"], "testo": m["testo"],
                              "foto": "foto già gestita, non allegata" if m["foto"] else None} for m in contesto],
@@ -284,6 +293,38 @@ def analizza(messaggi, sforzo="medium", timeout=900, foto_esempi=None, istruzion
         r["esito"]["serve_operatore"] = True
     r["esempi"] = bool(ex)
     return r
+
+
+def smista(messaggi, recenti, sforzo="low", timeout=300, avanzamento=None, controllo=None):
+    """Divide i messaggi di una richiesta per caso e dice se un caso continua una richiesta recente.
+    messaggi: come analizza(). recenti: [{id, stato, ora, paziente, messaggi: [testo|"[foto]"], risposta}].
+    Restituisce [{messaggi: [indici da 0], collega: id|None, paziente, motivo}], già controllati."""
+    righe = [{"n": i + 1, "ora": m["quando"].strftime("%d/%m %H:%M"), "testo": m["testo"] or None,
+              "foto": bool(m["immagine"])} for i, m in enumerate(messaggi)]
+    testo = ((HARNESS / "smista.md").read_text(encoding="utf-8")
+             + "\n\n<recenti>\n" + json.dumps(list(recenti), ensure_ascii=False, indent=1).replace("<", "\\u003c")
+             + "\n</recenti>\n\n<messaggi>\n" + json.dumps(righe, ensure_ascii=False, indent=1).replace("<", "\\u003c")
+             + "\n</messaggi>\n\nLe foto allegate sono quelle dei messaggi con foto, nell'ordine.\n")
+    foto = [m["immagine"] for m in messaggi if m["immagine"]]
+    r = chiedi(testo, foto, MODELLO, sforzo, schema=SCHEMA_SMISTA, timeout=timeout, avanzamento=avanzamento,
+               controllo=controllo)
+    casi, visti, ammessi = [], set(), {c["id"] for c in recenti}
+    for c in r["risposta"]["casi"]:
+        idx = sorted({n - 1 for n in c["messaggi"] if 1 <= n <= len(messaggi)} - visti)
+        if not idx:
+            continue
+        visti.update(idx)
+        casi.append({"messaggi": idx, "collega": c["collega"] if c["collega"] in ammessi else None,
+                     "paziente": (c["paziente"] or "").strip()[:60] or None, "motivo": c["motivo"][:300]})
+    if not casi:
+        raise Rifiutato("smistamento vuoto")
+    # Un messaggio dimenticato dal modello resta con il caso del messaggio prima (o il primo caso).
+    for i in sorted(set(range(len(messaggi))) - visti):
+        prima = [(max(j for j in c["messaggi"] if j < i), k) for k, c in enumerate(casi) if min(c["messaggi"]) < i]
+        dove = casi[max(prima)[1]] if prima else casi[0]
+        dove["messaggi"] = sorted(dove["messaggi"] + [i])
+    casi.sort(key=lambda c: c["messaggi"][0])
+    return {"casi": casi, "secondi": r["secondi"], "modello": r["modello"]}
 
 
 class Accesso:

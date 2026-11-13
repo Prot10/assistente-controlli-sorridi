@@ -186,24 +186,35 @@ class Assistente:
         s = int(self.a.impostazioni()["attesa_secondi"])
         return s if s in ATTESE else 120
 
+    def dato(self, m, gia_gestito=False):
+        d = {"quando": datetime.fromisoformat(m["quando"]), "testo": m["testo"] or "",
+             "immagine": str(self.media / m["media_file"]) if m["media_file"] else None}
+        if gia_gestito:
+            d["gia_gestito"] = True
+        return d
+
     def analizza(self, rid):
         imp = self.a.impostazioni()
         self.a.x("UPDATE richieste SET stato = 'analisi', errore = NULL WHERE id = ?", rid)
-        msgs = self.a.messaggi_richiesta(rid)
-        inizio = max(m["ricevuto"] for m in msgs)
-        dati = [{"quando": datetime.fromisoformat(m["quando"]), "testo": m["testo"] or "",
-                 "immagine": str(self.media / m["media_file"]) if m["media_file"] else None} for m in msgs]
-        r0 = self.a.richiesta(rid)
-        contesto = [{"quando": datetime.fromisoformat(m["quando"]), "da": "Sorridi" if m["direzione"] == "out" else "mittente",
-                     "testo": m["testo"] or "", "foto": bool(m["media_id"])} for m in self.a.precedenti(r0["contatto"], rid)]
         lavoro = self.lavoro[rid] = {"inizio": adesso(), "passi": []}
-        self.a.registra("analisi_avviata", rid, messaggi=[m["id"] for m in msgs], foto=sum(1 for d in dati if d["immagine"]),
-                        sforzo=imp["sforzo"], contesto=len(contesto))
 
         def avanza(frase):
             if not lavoro["passi"] or lavoro["passi"][-1]["testo"] != frase:
                 lavoro["passi"].append({"ora": adesso(), "testo": frase})
         try:
+            if not self.smista(rid, lavoro, avanza):
+                return  # i messaggi sono andati tutti in altre richieste
+            msgs = self.a.messaggi_richiesta(rid)
+            inizio = max(m["ricevuto"] for m in msgs)
+            r0 = self.a.richiesta(rid)
+            # Seguito di una richiesta già gestita: il modello rivede anche i messaggi e le foto di allora.
+            prima = self.a.messaggi_richiesta(r0["segue"]) if r0["segue"] else []
+            dati = [self.dato(m, True) for m in prima] + [self.dato(m) for m in msgs]
+            contesto = [{"quando": datetime.fromisoformat(m["quando"]), "da": "Sorridi" if m["direzione"] == "out" else "mittente",
+                         "testo": m["testo"] or "", "foto": bool(m["media_id"])}
+                        for m in self.a.precedenti(r0["contatto"], rid, segue=r0["segue"])]
+            self.a.registra("analisi_avviata", rid, messaggi=[m["id"] for m in msgs], foto=sum(1 for d in dati if d["immagine"]),
+                            sforzo=imp["sforzo"], contesto=len(contesto), segue=r0["segue"])
             r = motore.analizza(dati, imp["sforzo"], istruzioni=imp["istruzioni_risposta"], contesto=contesto,
                                 avanzamento=avanza, controllo=lavoro)
         except (motore.Rifiutato, subprocess.TimeoutExpired) as e:
@@ -231,6 +242,72 @@ class Assistente:
                 self.invia(rid, e["risposta_suggerita"], "invio automatico", automatica=True)
             except ErroreWhatsApp as err:
                 self.a.x("UPDATE richieste SET errore = ? WHERE id = ?", f"invio automatico non riuscito: {err}", rid)
+
+    STATI_RECENTI = {"nuova": "in attesa", "analisi": "in analisi", "proposta": "risposta da inviare",
+                     "errore": "risposta da inviare", "inviata": "risposta inviata", "scartata": "chiusa senza risposta"}
+
+    def smista(self, rid, lavoro, avanza):
+        """Divide i messaggi della richiesta per caso (un medico può mandare due pazienti di fila) e sposta quelli che
+        continuano un'altra richiesta. Restituisce False se nella richiesta non resta nulla da analizzare."""
+        msgs, r0 = self.a.messaggi_richiesta(rid), self.a.richiesta(rid)
+        if not msgs or r0["smistati"] == len(msgs):
+            return bool(msgs)
+        da = (datetime.now() - timedelta(hours=12)).isoformat(timespec="seconds")
+        recenti = []
+        for x in self.a.q("SELECT * FROM richieste WHERE contatto = ? AND id != ? AND (stato IN ('nuova', 'proposta', 'errore') "
+                          "OR creata >= ?) ORDER BY id DESC LIMIT 6", r0["contatto"], rid, da)[::-1]:
+            dentro = self.a.messaggi_richiesta(x["id"])
+            recenti.append({"id": x["id"], "stato": self.STATI_RECENTI.get(x["stato"], x["stato"]),
+                            "ora": datetime.fromisoformat(x["creata"]).strftime("%d/%m %H:%M"), "paziente": x["paziente"],
+                            "messaggi": [(m["testo"] or "") + (" [foto]" if m["media_id"] else "") for m in dentro][-10:],
+                            "risposta": (x["risposta_inviata"] or x["risposta_proposta"] or "")[:400] or None})
+        if len(msgs) < 2 and not recenti:
+            self.a.x("UPDATE richieste SET smistati = ? WHERE id = ?", len(msgs), rid)
+            return True
+        avanza("Divide i messaggi per caso")
+        try:
+            esito = motore.smista([self.dato(m) for m in msgs], recenti, controllo=lavoro)
+        except (motore.Rifiutato, subprocess.TimeoutExpired) as e:
+            if lavoro.get("fermato"):
+                raise
+            # Senza smistamento si analizza tutto insieme, come prima.
+            self.a.registra("smistamento_non_riuscito", rid, errore=str(e)[:300])
+            self.a.x("UPDATE richieste SET smistati = ? WHERE id = ?", len(msgs), rid)
+            return True
+        aperte = {x["id"] for x in self.a.q("SELECT id FROM richieste WHERE contatto = ? AND id != ? "
+                                            "AND stato IN ('nuova', 'proposta', 'errore')", r0["contatto"], rid)}
+        resta = next((c for c in esito["casi"] if c["collega"] not in aperte), None)
+        fatti = []
+        for c in esito["casi"]:
+            ids = [msgs[i]["id"] for i in c["messaggi"]]
+            if c is resta:
+                dove, come = rid, "resta"
+                self.a.x("UPDATE richieste SET segue = ?, paziente = COALESCE(?, paziente) WHERE id = ?", c["collega"], c["paziente"], rid)
+            elif c["collega"] in aperte:  # completa una richiesta ancora da inviare: si rianalizza con questi messaggi
+                dove, come = c["collega"], "unita"
+                self.sposta(ids, dove)
+                self.a.x("UPDATE richieste SET stato = 'nuova', smistati = ?, paziente = COALESCE(paziente, ?) WHERE id = ?",
+                         len(self.a.messaggi_richiesta(dove)), c["paziente"], dove)
+                self.subito.add(dove)
+            else:  # un altro caso: una richiesta sua, con la sua risposta
+                dove, come = self.a.x("INSERT INTO richieste (contatto, creata, stato, segue, paziente, smistati) "
+                                      "VALUES (?, ?, 'nuova', ?, ?, ?)", r0["contatto"], msgs[c["messaggi"][0]]["quando"],
+                                      c["collega"], c["paziente"], len(ids)), "nuova"
+                self.sposta(ids, dove)
+                self.subito.add(dove)
+            fatti.append({"richiesta": dove, "come": come, "messaggi": ids, "collega": c["collega"],
+                          "paziente": c["paziente"], "motivo": c["motivo"]})
+        self.a.registra("smistamento", rid, casi=fatti, secondi=esito["secondi"], modello=esito["modello"])
+        rimasti = len(self.a.messaggi_richiesta(rid))
+        if not rimasti:
+            self.a.x("DELETE FROM richieste WHERE id = ?", rid)
+            return False
+        self.a.x("UPDATE richieste SET smistati = ? WHERE id = ?", rimasti, rid)
+        return True
+
+    def sposta(self, ids, rid):
+        for i in ids:
+            self.a.x("UPDATE messaggi SET richiesta = ? WHERE id = ?", rid, i)
 
     def avvisa_proposta(self, rid, e, imp):
         if self.puo_inviare_da_solo(e, imp):
@@ -308,6 +385,11 @@ class Assistente:
         lavoro = self.lavoro.get(r["id"]) if r["stato"] == "analisi" else None
         r["analisi_tra"], r["lavoro"] = None, lavoro and {"inizio": lavoro["inizio"], "passi": lavoro["passi"]}
         dentro = self.a.messaggi_richiesta(r["id"])
+        r["seguito"] = None
+        if r.get("segue"):
+            p = self.a.q("SELECT id, stato, creata, decisa, risposta_inviata, paziente FROM richieste WHERE id = ?", r["segue"])
+            if p:
+                r["seguito"] = {**p[0], "messaggi": [self.vista_messaggio(m) for m in self.a.messaggi_richiesta(r["segue"])]}
         r["foto_attese"] = sum(1 for m in dentro if m["media_id"])
         r["foto_scaricate"] = sum(1 for m in dentro if m["media_file"] or m["media_errore"])
         if r["stato"] == "nuova" and dentro:
@@ -398,7 +480,8 @@ class Assistente:
                 c = nomi.get(r["contatto"]) or {}
                 caso = {
                     "richiesta": r["id"], "chat": {"nome": c.get("nome"), "rinominata": c.get("alias"), "numero": c.get("wa_id")},
-                    "creata": r["creata"], "stato": r["stato"], "messaggi_ricevuti": ricevuti,
+                    "creata": r["creata"], "stato": r["stato"], "paziente": r["paziente"], "segue_la_richiesta": r["segue"],
+                    "messaggi_ricevuti": ricevuti,
                     "valutazione": esito, "modello": r["modello"], "secondi_analisi": r["secondi"],
                     "risposta_proposta": r["risposta_proposta"], "risposta_inviata": r["risposta_inviata"],
                     "testo_modificato": bool(r["modificata"]) if r["stato"] == "inviata" else None,

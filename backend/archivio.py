@@ -75,10 +75,13 @@ class Archivio:
         self.db.executescript(SCHEMA_DB)
         self.lock = threading.RLock()
         # Colonne aggiunte dopo la prima versione: gli archivi già creati le ricevono qui.
-        colonne = {r["name"] for r in self.q("PRAGMA table_info(contatti)")}
-        for nome, tipo in (("alias", "TEXT"), ("archiviata", "INTEGER DEFAULT 0")):
-            if nome not in colonne:
-                self.x(f"ALTER TABLE contatti ADD COLUMN {nome} {tipo}")
+        for tabella, nuove in (("contatti", (("alias", "TEXT"), ("archiviata", "INTEGER DEFAULT 0"))),
+                               # segue: richiesta già gestita che questa continua; smistati: messaggi già divisi per caso.
+                               ("richieste", (("segue", "INTEGER"), ("smistati", "INTEGER"), ("paziente", "TEXT")))):
+            colonne = {r["name"] for r in self.q(f"PRAGMA table_info({tabella})")}
+            for nome, tipo in nuove:
+                if nome not in colonne:
+                    self.x(f"ALTER TABLE {tabella} ADD COLUMN {nome} {tipo}")
 
     def q(self, sql, *args):
         with self.lock:
@@ -145,11 +148,13 @@ class Archivio:
         self.x("INSERT INTO messaggi (id, contatto, direzione, quando, tipo, testo, stato, richiesta, operatore, ricevuto) "
                "VALUES (?, ?, 'out', ?, 'text', ?, 'inviato', ?, ?, ?)", wamid, contatto, ora, testo, richiesta, operatore, ora)
 
-    def precedenti(self, contatto, rid, ore=6, quanti=8):
-        """Gli ultimi messaggi della chat fuori da questa richiesta, già gestiti: solo come contesto per il modello."""
+    def precedenti(self, contatto, rid, ore=6, quanti=8, segue=None):
+        """Gli ultimi messaggi della chat fuori da questa richiesta, già gestiti: solo come contesto per il modello.
+        segue: i messaggi in arrivo di quella richiesta entrano già nell'analisi con le foto, qui resta solo la risposta."""
         da = (datetime.now() - timedelta(hours=ore)).isoformat(timespec="seconds")
         righe = self.q("SELECT direzione, quando, testo, media_id FROM messaggi WHERE contatto = ? "
-                       "AND COALESCE(richiesta, -1) != ? AND quando >= ? ORDER BY quando DESC LIMIT ?", contatto, rid, da, quanti)
+                       "AND COALESCE(richiesta, -1) != ? AND NOT (direzione = 'in' AND COALESCE(richiesta, -1) = ?) "
+                       "AND quando >= ? ORDER BY quando DESC LIMIT ?", contatto, rid, segue or -1, da, quanti)
         return righe[::-1]
 
     def cancella_chat(self, contatto):

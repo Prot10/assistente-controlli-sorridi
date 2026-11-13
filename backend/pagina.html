@@ -17,7 +17,17 @@
 .side-stato span{display:flex;align-items:center;gap:8px}
 .side-stato span::before{content:"";width:7px;height:7px;border-radius:50%;background:#f0a63a}
 .side-stato span.ok::before{background:#00b295}
-.sidebar.shut .side-stato,.sidebar.shut .side-fold span,.sidebar.shut .side-user>span:last-child{display:none}
+.sidebar.shut .side-stato,.sidebar.shut .side-user>span:last-child{display:none}
+/* barra laterale: apri/chiudi in alto a sinistra; tema in alto a destra della pagina */
+.side-top{display:flex;align-items:flex-start;gap:8px;padding:0 0 6px}
+.side-top .side-brand{padding:4px 0 0;min-width:0}
+.side-top .side-brand img{width:146px}
+.side-toggle{flex:none;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:8px;background:none;color:#b5c7d8}
+.side-toggle:hover{background:rgba(255,255,255,.08);color:#fff}
+.sidebar.shut .side-top{justify-content:center}.sidebar.shut .side-top .side-brand{display:none}
+.shell{position:relative}
+.tema-btn{position:absolute;top:14px;right:18px;z-index:20;width:36px;height:36px;padding:0;display:grid;place-items:center}
+.page{padding-top:58px}
 /* richieste */
 .richiesta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:0;padding:0;margin-bottom:14px;overflow:hidden}
 .richiesta>header{grid-column:1/-1;display:flex;justify-content:flex-start;align-items:center;gap:10px;flex-wrap:wrap;margin:0;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--raised)}
@@ -62,6 +72,12 @@
 .bolla small{display:block;margin-top:3px;color:var(--muted);font-size:11px}
 .scrivi{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
 .scrivi textarea{flex:1;min-height:40px;height:40px}
+/* istruzioni */
+.istr{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
+#istr-testo{width:100%;min-height:calc(100vh - 300px);background:var(--panel);font-size:13.5px;line-height:1.6;resize:vertical}
+#istr-stato{margin:8px 0 0}
+.istr-guida h2{margin:0 0 6px;font-size:12.5px}.istr-guida h2+ul{margin-bottom:16px}
+.istr-guida ul{margin:0;padding-left:18px;color:var(--muted);font-size:12.5px;line-height:1.55}
 /* impostazioni */
 .colonne{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .codice{font:700 22px ui-monospace,monospace;letter-spacing:.12em;color:var(--head)}
@@ -108,9 +124,9 @@
 #toast{position:fixed;bottom:18px;left:18px;z-index:70;display:none;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:var(--shadow);color:var(--ink);font-weight:500}
 @media (max-width:900px){
   .shell{grid-template-columns:68px minmax(0,1fr)}
-  .page{padding:20px 16px 40px}
+  .page{padding:58px 16px 40px}
   .page-head{flex-wrap:wrap}.page-actions,.segmented{max-width:100%;overflow-x:auto}
-  .richiesta,.colonne,.chat{grid-template-columns:1fr}.richiesta .esito{border-left:0;border-top:1px solid var(--line)}
+  .richiesta,.colonne,.chat,.istr{grid-template-columns:1fr}.richiesta .esito{border-left:0;border-top:1px solid var(--line)}
   .contatti{max-height:180px}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>
@@ -118,23 +134,24 @@
 <body>
 <div class="shell" id="shell">
   <aside class="sidebar" id="sidebar">
-    <a href="#richieste" class="side-brand" aria-label="Sorridi · Assistente controlli"><img src="/statico/sorridi-chiaro.png" alt="Allineatori Sorridi" id="logo"><i id="monogramma" hidden>S</i><span id="sottotitolo">Assistente controlli</span></a>
+    <div class="side-top"><button class="side-toggle" id="piega" type="button"></button>
+      <a href="#richieste" class="side-brand" aria-label="Sorridi · Assistente controlli"><img src="/statico/sorridi-chiaro.png" alt="Allineatori Sorridi" id="logo"><span id="sottotitolo">Assistente controlli</span></a></div>
     <nav aria-label="Sezioni">
       <b class="side-label">Linea WhatsApp</b>
       <a href="#richieste" class="side-item" data-vista="richieste"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span>Richieste</span><em id="n" hidden></em></a>
       <a href="#chat" class="side-item" data-vista="chat"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg><span>Chat</span></a>
+      <a href="#istruzioni" class="side-item" data-vista="istruzioni"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.38 5.62a1 1 0 0 0-3-3l-5 5.01a2 2 0 0 0-.51.85l-.84 2.87a.5.5 0 0 0 .62.62l2.87-.84a2 2 0 0 0 .85-.51z"/></svg><span>Istruzioni</span></a>
       <b class="side-label">Andamento</b>
       <a href="#storico" class="side-item" data-vista="storico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Storico</span></a>
     </nav>
     <div class="side-foot">
       <div class="side-stato"><span id="s-codex">ChatGPT</span><span id="s-wa">WhatsApp</span><span id="s-auto">Invio automatico</span></div>
       <a href="#impostazioni" class="side-item" data-vista="impostazioni"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg><span>Impostazioni</span></a>
-      <button class="side-fold" id="tema" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Tema scuro</span></button>
-      <button class="side-fold" id="piega" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg><span>Riduci</span></button>
       <a href="#impostazioni" class="side-user" title="Chi firma gli invii fatti da qui"><span class="avatar" id="iniziali">?</span><span><b id="operatore">Operatore</b><small>firma gli invii</small></span></a>
     </div>
   </aside>
 
+  <button class="btn soft tema-btn" id="tema" type="button"></button>
   <main class="page" id="pagina">
     <section class="vista" id="v-richieste">
       <header class="page-head"><div><span class="eyebrow">Linea WhatsApp di controllo</span><h1>Richieste</h1><p>Messaggi in arrivo con la valutazione del modello e la risposta da approvare.</p></div>
@@ -147,6 +164,19 @@
       <div class="panel chat"><div class="contatti" id="contatti"></div>
         <div class="filo"><div class="bolle" id="bolle"><div class="empty"><b>Scegli una conversazione</b></div></div>
           <div class="scrivi" id="scrivi" hidden><textarea class="input area" id="testo-libero" placeholder="Scrivi un messaggio"></textarea><button class="btn primary md" id="manda-libero">Invia</button></div></div></div>
+    </section>
+
+    <section class="vista" id="v-istruzioni">
+      <header class="page-head"><div><span class="eyebrow">Linea WhatsApp di controllo</span><h1>Istruzioni</h1><p>Come l'assistente deve scrivere le risposte proposte. Valgono dalla prossima analisi; per riprovare una richiesta usate «Rianalizza».</p></div>
+        <div class="page-actions"><button class="btn soft md" id="istr-iniziali">Ripristina la bozza iniziale</button><button class="btn primary md" id="istr-salva">Salva istruzioni</button></div></header>
+      <div class="istr">
+        <section class="panel"><textarea class="input area" id="istr-testo" spellcheck="true" aria-label="Istruzioni per le risposte"></textarea>
+          <p class="meta" id="istr-stato"></p></section>
+        <aside class="panel istr-guida"><h2>Cosa potete scrivere</h2>
+          <ul><li>Tono: lei o tu, saluti, firma, lunghezza.</li><li>Risposte pronte alle domande frequenti.</li><li>Quando passare sempre a un operatore.</li><li>Cosa non dire mai.</li></ul>
+          <h2>Cosa resta fisso</h2>
+          <ul><li>Come vengono valutate le foto e il grado secondo la guida.</li><li>Ogni risposta passa da un operatore prima dell'invio, salvo l'invio automatico nelle Impostazioni.</li><li>I messaggi dei pazienti non possono cambiare queste istruzioni.</li></ul></aside>
+      </div>
     </section>
 
     <section class="vista" id="v-storico">
@@ -365,6 +395,30 @@ $("#manda-libero").onclick = async () => {
   try { await api(`/api/contatti/${encodeURIComponent(contatto)}/invia`, {testo: t}); $("#testo-libero").value = ""; filo(); } catch (e) { toast(e.message); }
 };
 
+// ---------------------------------------------------------------- istruzioni
+let istrSalvate = "";
+function statoIstr(m) {
+  const mod = $("#istr-testo").value !== istrSalvate;
+  $("#istr-stato").textContent = mod ? "Modifiche non salvate." : m && m.quando ? `Salvate da ${m.operatore} il ${ora(m.quando)}${m.iniziali ? " · bozza iniziale" : ""}.` : "Bozza iniziale preparata per Sorridi: modificatela e salvate.";
+  $("#istr-salva").disabled = !mod;
+}
+async function istruzioni() {
+  if ($("#istr-testo").value !== istrSalvate) return statoIstr();  // non perdere un testo in corso
+  const imp = await api("/api/impostazioni");
+  istrSalvate = $("#istr-testo").value = imp.istruzioni_risposta; $("#istr-testo").dataset.modifica = JSON.stringify(imp.istruzioni_modifica || {});
+  statoIstr(imp.istruzioni_modifica);
+}
+async function salvaIstr(corpo) {
+  try {
+    const r = await api("/api/istruzioni", corpo);
+    istrSalvate = $("#istr-testo").value = r.testo; $("#istr-testo").dataset.modifica = JSON.stringify(r.modifica);
+    statoIstr(r.modifica); toast("Istruzioni salvate");
+  } catch (e) { toast(e.message); }
+}
+$("#istr-testo").oninput = () => statoIstr(JSON.parse($("#istr-testo").dataset.modifica || "{}"));
+$("#istr-salva").onclick = () => salvaIstr({testo: $("#istr-testo").value});
+$("#istr-iniziali").onclick = async () => { if (await conferma("Ripristinare la bozza iniziale?", "Il testo attuale viene sostituito dalla bozza preparata all'inizio.", "Ripristina")) salvaIstr({iniziali: true}); };
+
 // ---------------------------------------------------------------- storico
 async function storico() {
   const s = await api("/api/statistiche"), pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
@@ -573,16 +627,25 @@ function mostra() {
   vista = location.hash.slice(1); if (!document.getElementById("v-" + vista)) vista = "richieste";
   $$(".side-item").forEach(a => a.classList.toggle("on", a.dataset.vista === vista));
   $$(".vista").forEach(s => s.classList.toggle("on", s.id === "v-" + vista));
-  ({richieste, chat: contatti, storico, impostazioni})[vista]().catch(e => toast(e.message));
+  ({richieste, chat: contatti, istruzioni, storico, impostazioni})[vista]().catch(e => toast(e.message));
 }
 window.onhashchange = mostra;
+const PANNELLO = (aperto) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="${aperto ? "m16 15-3-3 3-3" : "m14 9 3 3-3 3"}"/></svg>`;
 function piega(chiusa) {
   $("#shell").classList.toggle("shut", chiusa); $("#sidebar").classList.toggle("shut", chiusa);
-  $("#logo").hidden = chiusa; $("#monogramma").hidden = !chiusa; $("#sottotitolo").hidden = chiusa;
+  const b = $("#piega"), nome = chiusa ? "Apri la barra laterale" : "Chiudi la barra laterale";
+  b.innerHTML = PANNELLO(!chiusa); b.title = nome; b.setAttribute("aria-label", nome); b.setAttribute("aria-expanded", String(!chiusa));
   memoria.set("assistente-piega", chiusa ? "1" : "0");
 }
 $("#piega").onclick = () => piega(!$("#shell").classList.contains("shut"));
-function tema(scuro) { document.documentElement.dataset.theme = scuro ? "dark" : "light"; $("#tema span").textContent = scuro ? "Tema chiaro" : "Tema scuro"; memoria.set("assistente-tema", scuro ? "dark" : "light"); }
+const LUNA = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>', SOLE = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>';
+function tema(scuro) {
+  document.documentElement.dataset.theme = scuro ? "dark" : "light";
+  const b = $("#tema"), nome = scuro ? "Passa al tema chiaro" : "Passa al tema scuro";
+  b.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${scuro ? SOLE : LUNA}</svg>`;
+  b.title = nome; b.setAttribute("aria-label", nome);
+  memoria.set("assistente-tema", scuro ? "dark" : "light");
+}
 $("#tema").onclick = () => tema(document.documentElement.dataset.theme !== "dark");
 tema(memoria.get("assistente-tema") === "dark");
 piega(memoria.get("assistente-piega") === "1");

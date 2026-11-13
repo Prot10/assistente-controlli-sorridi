@@ -8,6 +8,8 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
+ISTRUZIONI_INIZIALI = (Path(__file__).resolve().parent / "harness" / "istruzioni-sorridi.md").read_text(encoding="utf-8")
+
 PREDEFINITE = {
     "sforzo": "medium", "operatore": "",
     "wa_token": "", "wa_app_secret": "", "wa_verify_token": "",
@@ -15,6 +17,8 @@ PREDEFINITE = {
     "wa_versione": "v26.0", "wa_base": "https://graph.facebook.com",
     "porta_webhook": 8341, "tunnel": "automatico", "comando_tunnel": "", "indirizzo_pubblico": "",
     "auto_invio": False, "auto_decisioni": ["OK"], "auto_confidenza": 90,
+    # Scritte dallo staff nella pagina Istruzioni; si parte dalla bozza in harness/.
+    "istruzioni_risposta": ISTRUZIONI_INIZIALI, "istruzioni_modifica": {},
 }
 SEGRETE = {"wa_token", "wa_app_secret"}
 

@@ -32,7 +32,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import motore
-from archivio import Archivio, SEGRETE, adesso, cartella_dati
+from archivio import ISTRUZIONI_INIZIALI, Archivio, SEGRETE, adesso, cartella_dati
 from tunnel import Tunnel
 from whatsapp import TLS, Cloud, ErroreWhatsApp, eventi, firma_valida
 
@@ -117,7 +117,7 @@ class Assistente:
         dati = [{"quando": datetime.fromisoformat(m["quando"]), "testo": m["testo"] or "",
                  "immagine": str(self.media / m["media_file"]) if m["media_file"] else None} for m in msgs]
         try:
-            r = motore.analizza(dati, imp["sforzo"])
+            r = motore.analizza(dati, imp["sforzo"], istruzioni=imp["istruzioni_risposta"])
         except (motore.Rifiutato, subprocess.TimeoutExpired) as e:
             self.a.x("UPDATE richieste SET stato = 'errore', errore = ? WHERE id = ?", str(e)[:500], rid)
             return
@@ -385,6 +385,13 @@ def gestore_pagina(app, porta):
                     app.accesso.esci()
                     app.codex = None
                     return self._json({"ok": True})
+                if parti == ["api", "istruzioni"]:
+                    testo = ISTRUZIONI_INIZIALI if corpo.get("iniziali") else str(corpo.get("testo", ""))
+                    if len(testo) > 8000:
+                        raise ValueError("le istruzioni superano gli 8000 caratteri")
+                    modifica = {"operatore": operatore, "quando": adesso(), "iniziali": testo == ISTRUZIONI_INIZIALI}
+                    a.salva_impostazioni({"istruzioni_risposta": testo, "istruzioni_modifica": modifica})
+                    return self._json({"testo": testo, "modifica": modifica})
                 if parti == ["api", "impostazioni"]:
                     vecchia = a.impostazioni()
                     a.salva_impostazioni(corpo)

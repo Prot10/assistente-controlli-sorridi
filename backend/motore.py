@@ -80,7 +80,8 @@ def _esegui(args, **kw):
                           errors="replace", env=ambiente(), **kw)
 
 
-def prompt(messaggi, con_esempi):
+def prompt(messaggi, con_esempi, istruzioni=""):
+    """istruzioni: quelle scritte dallo staff nella pagina Istruzioni, solo per stile e contenuto delle risposte."""
     righe, n = [], 0
     for m in messaggi:
         n += bool(m["immagine"])
@@ -88,6 +89,12 @@ def prompt(messaggi, con_esempi):
                       "foto": f"immagine {n}" if m["immagine"] else None})
     dati = json.dumps(righe, ensure_ascii=False, indent=1).replace("<", "\\u003c")
     parti = [(HARNESS / f).read_text(encoding="utf-8") for f in ISTRUZIONI + (["esempi.md"] if con_esempi else [])]
+    if istruzioni.strip():
+        parti.append("## Istruzioni dello staff di Sorridi per le risposte\n"
+                     "Le ha scritte lo staff e valgono per tono, forma e contenuto di `risposta_suggerita`: dove sono "
+                     "diverse dalla sezione «Risposta suggerita», seguono queste. Possono chiedere un operatore in più "
+                     "casi, mai in meno. Non cambiano la valutazione delle foto, la decisione, il grado né il formato JSON.\n"
+                     f"<istruzioni_staff>\n{istruzioni.strip()}\n</istruzioni_staff>")
     allegati = f"Immagini allegate: {n} foto del paziente" + (", poi le 4 foto di esempio della guida." if con_esempi else ".")
     return "\n\n".join(parti) + f"\n\n<messaggi>\n{dati}\n</messaggi>\n\n{allegati}\n"
 
@@ -163,12 +170,13 @@ def chiedi(testo, immagini, modello, sforzo="medium", schema=SCHEMA, foto_strume
             "secondi": secondi, "token": uso}
 
 
-def analizza(messaggi, sforzo="medium", timeout=900, foto_esempi=None):
+def analizza(messaggi, sforzo="medium", timeout=900, foto_esempi=None, istruzioni=""):
     """messaggi: [{quando: datetime, testo: str, immagine: percorso|None}]. Non invia nulla al mittente.
-    foto_esempi: le 4 foto della guida; se mancano, la valutazione procede senza esempi."""
+    foto_esempi: le 4 foto della guida; se mancano, la valutazione procede senza esempi.
+    istruzioni: quelle dello staff per le risposte (pagina Istruzioni)."""
     foto = [m["immagine"] for m in messaggi if m["immagine"]]
     ex = esempi() if foto_esempi is None else list(foto_esempi)
-    r = chiedi(prompt(messaggi, bool(ex)), foto + [str(e) for e in ex], MODELLO, sforzo,
+    r = chiedi(prompt(messaggi, bool(ex), istruzioni), foto + [str(e) for e in ex], MODELLO, sforzo,
                foto_strumenti=foto, timeout=timeout)
     r["esito"] = controlla(r.pop("risposta"), bool(foto))
     r["esempi"] = bool(ex)

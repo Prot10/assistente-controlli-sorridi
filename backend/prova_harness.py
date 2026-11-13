@@ -19,14 +19,16 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+from archivio import ISTRUZIONI_INIZIALI
 from motore import GRADI_ESEMPI, Rifiutato, analizza
 
 TESTO = "Foto di controllo dopo 7 giorni di uso dell'allineatore HARD."
 
 
-def valuta(foto, file, esempi, sforzo):
+def valuta(foto, file, esempi, sforzo, istruzioni):
     try:
-        r = analizza([{"quando": datetime.now(), "testo": TESTO, "immagine": str(foto)}], sforzo, foto_esempi=esempi)
+        r = analizza([{"quando": datetime.now(), "testo": TESTO, "immagine": str(foto)}], sforzo, foto_esempi=esempi,
+                     istruzioni=istruzioni)
     except (Rifiutato, Exception) as e:  # noqa: BLE001 - l'errore resta nel file e la foto non conta
         r = {"errore": str(e)[:500]}
     file.parent.mkdir(parents=True, exist_ok=True)
@@ -82,6 +84,7 @@ def main():
     ap.add_argument("--escludi", nargs="*", default=[])
     ap.add_argument("--run", type=int, default=1)
     ap.add_argument("--sforzo", default="medium")
+    ap.add_argument("--istruzioni", type=Path, help="istruzioni dello staff; senza, la bozza iniziale come nell'app")
     ap.add_argument("--parallelo", type=int, default=4)
     ap.add_argument("--confermo-invio", action="store_true", help="le foto dei pazienti vanno a OpenAI")
     ap.add_argument("--solo-punteggi", action="store_true")
@@ -90,12 +93,13 @@ def main():
     if not a.solo_punteggi:
         if not a.confermo_invio or not a.foto:
             raise SystemExit("Servono --foto (deidentificate) e --confermo-invio, dopo l'ok di Andrea.")
+        istruzioni = a.istruzioni.read_text(encoding="utf-8") if a.istruzioni else ISTRUZIONI_INIZIALI
         esempi = [a.esempi / f"guida-grado-{g}.jpg" for g in GRADI_ESEMPI] if a.esempi else []
         lavori = [(f, a.uscita / f"run{k}" / f"{f.stem}.json") for k in range(1, a.run + 1) for f in sorted(a.foto.glob("*.jpg"))]
         lavori = [l for l in lavori if not l[1].exists() or "errore" in json.loads(l[1].read_text())]
         print(f"{len(lavori)} valutazioni da fare", flush=True)
         with ThreadPoolExecutor(a.parallelo) as ex:
-            for n, f in enumerate(ex.map(lambda l: valuta(l[0], l[1], esempi, a.sforzo), lavori), 1):
+            for n, f in enumerate(ex.map(lambda l: valuta(l[0], l[1], esempi, a.sforzo, istruzioni), lavori), 1):
                 r = json.loads(f.read_text())
                 print(f"{n}/{len(lavori)} {f.stem} {r['esito']['decisione'] if 'esito' in r else 'ERRORE ' + r['errore'][:80]}", flush=True)
     punteggi(a.uscita, vero, set(a.escludi))

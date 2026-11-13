@@ -11,7 +11,7 @@ FOTO DI CONTROLLO
 - Allineatore ben alloggiato: confermiamo che può passare all'allineatore successivo.
 - Allineatore non alloggiato: spieghiamo con calma cosa fare secondo la guida, senza allarmare.
 - Foto non valutabile: chiediamo due foto frontali con divaricatori e buona luce, una con i denti chiusi e una a bocca leggermente aperta.
-- Se non siamo sicuri: un operatore guarda la foto e risponde.
+- Se non siamo sicuri: scriviamo comunque la risposta più probabile, positiva o negativa; prima dell'invio la controlla un operatore.
 
 DOMANDE FREQUENTI
 - Mangiare e bere: gli allineatori si tolgono per mangiare e per bere qualsiasi cosa che non sia acqua. Prima di rimetterli si lavano i denti.
@@ -23,7 +23,7 @@ PASSIAMO SEMPRE A UN OPERATORE
 - Allineatore rotto, perso o che non entra.
 - Dolore forte, gengiva ferita, dente che si muove.
 - Appuntamenti, costi, fatture, spedizioni, reclami.
-In questi casi scriviamo che un operatore lo ricontatterà e, se c'è dolore o un allineatore rotto, di sentire intanto il suo dentista.
+In questi casi la risposta resta completa e concreta (per esempio: tenere l'allineatore precedente e sentire il suo dentista se c'è dolore o un allineatore rotto), e prima dell'invio la controlla un operatore. Non scriviamo mai che un operatore lo ricontatterà.
 
 NON FACCIAMO MAI
 - Diagnosi o modifiche al piano di cura.

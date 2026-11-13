@@ -9,7 +9,8 @@
 - Riceve i messaggi della linea WhatsApp dei controlli.
 - Per ogni foto, ChatGPT valuta se l'allineatore calza, seguendo la guida "Gestione degli allineatori", e propone la risposta.
 - L'operatore la **invia**, la **modifica** o la **scarta**. Nulla parte da solo, a meno di attivare l'invio automatico.
-- Lo **Storico** mostra quante proposte vengono accettate senza modifiche.
+- Se la valutazione non è sicura, o il caso va seguito da una persona, la richiesta ha il riquadro rosso **Serve un operatore**. La risposta è comunque completa: rileggetela, correggetela se serve e inviatela.
+- Lo **Storico** mostra quante proposte vengono accettate senza modifiche. **Scarica tutti i dati (zip)** prepara un file con ogni richiesta, foto, risposta e decisione, da mandare per un controllo.
 
 ## 3. Collegare ChatGPT
 - **Impostazioni → ChatGPT → Accedi con ChatGPT**, con l'account aziendale. Serve un piano che includa Codex, per esempio Plus o Team.
@@ -38,6 +39,14 @@
 - Le risposte sono **gratuite fino a 1.000 al mese** per numero. Oltre, costano pochi centesimi ciascuna.
 - Il tunnel incluso (Cloudflare) è gratuito.
 
-## 6. Da sapere
+## 6. Uso quotidiano
+- **Attesa**: l'analisi parte 2 minuti dopo l'ultimo messaggio, così testo e foto mandati a distanza finiscono nella stessa richiesta. Si cambia in Impostazioni → Valutazione. Per non aspettare: **Analizza ora**.
+- **Fermare**: **Non analizzare** (in attesa) o **Ferma l'analisi** (in corso) lasciano la richiesta aperta: scrivete la risposta a mano o scartatela.
+- **Notifiche**: in Impostazioni → Notifiche scegliete quando ricevere l'avviso e se con suono. **Prova la notifica** mostra com'è.
+- **Chat**: rinominate un numero, archiviate le chat chiuse o cancellatele da questo PC. Su WhatsApp restano.
+
+## 7. Da sapere
 - Per ricevere i messaggi, il PC deve restare acceso con l'app aperta.
 - Dopo 24 ore dall'ultimo messaggio del paziente, WhatsApp non accetta più risposte libere. L'app lo segnala.
+- Le foto "visualizzabili una volta" non arrivano alle app: l'app lo scrive nella richiesta, chiedete di rimandarle come foto normali.
+- Lo zip dei dati contiene foto e messaggi dei pazienti: mandatelo solo per canali riservati.

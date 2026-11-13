@@ -42,11 +42,13 @@ Su Mac, chiudere la finestra non chiude l'app: il webhook continua a ricevere. P
 ## Uso
 La barra laterale porta a Richieste, Chat, Istruzioni, Storico e Impostazioni, e mostra se ChatGPT e WhatsApp sono collegati e se l'invio automatico è attivo. Si apre e si chiude dal pulsante in alto a sinistra; il tema chiaro o scuro si cambia dall'icona in alto a destra.
 
-- **Richieste**: i messaggi in arrivo, raggruppati per paziente (si aspettano 20 secondi di silenzio, perché foto e testo arrivano separati). Ogni richiesta mostra decisione, grado, motivo, azione della guida e la risposta da inviare. Le azioni sono Invia, Scarta e Rianalizza. "Decisione corretta" registra il giudizio dell'operatore.
-- **Chat**: le conversazioni complete, con lo stato di consegna, e un campo per scrivere messaggi liberi.
+- **Richieste**: i messaggi in arrivo, raggruppati per paziente. L'analisi parte dopo un'attesa di silenzio (2 minuti all'inizio, da 20 secondi a 15 minuti in Impostazioni → Valutazione), perché spesso il medico scrive prima e manda le foto dopo. Durante l'attesa la richiesta mostra il conto alla rovescia, le foto scaricate e **Analizza ora**; durante l'analisi mostra cosa sta facendo l'agente. **Non analizzare** e **Ferma l'analisi** lasciano la richiesta aperta per una risposta a mano. Un'analisi interrotta dalla chiusura dell'app riparte alla riapertura.
+- Ogni proposta mostra decisione, grado, motivo, azione della guida e una risposta completa, pronta da inviare. Quando il caso va seguito da una persona compare il riquadro rosso **Serve un operatore**: la risposta è comunque scritta come per l'invio. Le azioni sono Invia, Scarta e Rianalizza; "Decisione corretta" registra il giudizio dell'operatore.
+- **Chat**: le conversazioni complete con lo stato di consegna e un campo per i messaggi liberi. Le foto mandate insieme formano un album. Ogni chat si può **rinominare**, **archiviare** (torna tra le chat se il contatto riscrive) o **cancellare** da questo PC; c'è una ricerca per nome o numero.
+- **Notifiche** (Impostazioni → Notifiche): avvisi di Windows per tutti i messaggi, solo per le proposte pronte, solo quando serve un operatore, oppure mai, con o senza suono. Un clic sull'avviso apre la richiesta.
 - **Foto**: nella richiesta sono miniature numerate come le cita il modello («immagine 2»). Un clic apre il visore: frecce tra le foto, zoom con rotella o doppio clic, trascinamento, più contrasto e rotazione.
 - **Istruzioni**: come l'assistente deve scrivere le risposte proposte (tono, domande frequenti, quando passare a un operatore). Si parte da una bozza modificabile; non cambiano la valutazione delle foto.
-- **Storico**: quante proposte sono state accettate senza modifiche, modificate o scartate, e quanto spesso l'operatore conferma la decisione del modello. Si può esportare in CSV.
+- **Storico**: quante proposte sono state accettate senza modifiche, modificate o scartate, e quanto spesso l'operatore conferma la decisione del modello. Si può esportare in CSV, oppure scaricare **tutti i dati (zip)**: una cartella per richiesta con messaggi, foto, valutazione, risposta proposta e inviata, parole cambiate, decisione del modello e dell'operatore, più il registro di ogni azione (analisi, invii, scarti, chat, impostazioni).
 - **Invio automatico**: spento all'inizio. Quando è attivo, manda da solo solo le foto di controllo con una decisione ammessa, confidenza sopra la soglia e senza richiesta di operatore.
 
 Dopo 24 ore dall'ultimo messaggio del paziente, WhatsApp accetta solo messaggi modello approvati da Meta. L'assistente lo segnala.
@@ -66,6 +68,7 @@ Sulle 37 foto di prova di Sorridi (21 da segnalare), Sol con questo harness ha m
 
 ## Dati e sicurezza
 - Storico, foto, esempi della guida e login ChatGPT stanno in `%LOCALAPPDATA%\AssistenteSorridi` (su Mac in `~/Library/Application Support/AssistenteSorridi`). Contengono dati di pazienti: vanno inclusi nel backup del computer e non vanno copiati altrove. Il registro dell'app è in `%APPDATA%\Assistente controlli\logs` (su Mac in `~/Library/Logs/Assistente controlli`).
+- Lo zip dello Storico contiene foto e messaggi dei pazienti, senza le chiavi di Meta: va mandato solo per canali riservati. Cancellare una chat toglie messaggi, richieste, foto e registro di quella chat; resta solo la riga che dice che è stata cancellata.
 - La pagina ascolta solo su 127.0.0.1 e rifiuta richieste da altri siti. Il webhook accetta solo messaggi firmati da Meta con l'app secret.
 - I messaggi dei pazienti sono trattati come dati: chi chiede di ignorare le regole finisce all'operatore.
 - Testi e foto vanno a OpenAI con l'account ChatGPT collegato. Conservazione e uso dei dati seguono il piano e le impostazioni di quell'account: va verificato prima dell'uso con pazienti.

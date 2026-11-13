@@ -179,6 +179,9 @@ def analizza(messaggi, sforzo="medium", timeout=900, foto_esempi=None, istruzion
     r = chiedi(prompt(messaggi, bool(ex), istruzioni), foto + [str(e) for e in ex], MODELLO, sforzo,
                foto_strumenti=foto, timeout=timeout)
     r["esito"] = controlla(r.pop("risposta"), bool(foto))
+    # 13 Nov 2026: senza gli esempi della guida una foto non OK è risultata OK due volte su due.
+    if foto and not ex:
+        r["esito"]["serve_operatore"] = True
     r["esempi"] = bool(ex)
     return r
 

@@ -25,7 +25,7 @@ L'app si aggiorna da sola: controlla le nuove versioni all'avvio e ogni 4 ore, l
 In **Impostazioni**, divise in quattro schede:
 - **WhatsApp**: il collegamento in cinque passaggi, qui sotto, e le impostazioni avanzate del tunnel.
 - **ChatGPT**: "Accedi con ChatGPT" (si apre il browser) oppure "Accedi con un codice".
-- **Valutazione**: modello, livello di ragionamento ed **esempi della guida**. Caricare le 4 foto di esempio della guida "Gestione degli allineatori", una per grado. Il modello le confronta con la foto del paziente. Non sono nel repository perché sono foto di pazienti: Sorridi le riceve a parte.
+- **Valutazione**: modello, livello di ragionamento ed **esempi della guida**. Caricare le 4 foto di esempio della guida "Gestione degli allineatori", una per grado. Il modello le confronta con la foto del paziente. Non sono nel repository perché sono foto di pazienti: Sorridi le riceve a parte. Finché ne manca anche una, ogni foto ricevuta passa da un operatore e l'invio automatico resta fermo: nella prova del 13 novembre 2026, senza esempi, una foto non OK è stata giudicata OK.
 - **Invio**: il nome dell'operatore che firma gli invii e l'invio automatico.
 
 I cinque passaggi di **WhatsApp**, ciascuno controllato su Meta:

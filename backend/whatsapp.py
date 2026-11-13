@@ -55,11 +55,16 @@ def eventi(payload):
                 tipo = m.get("type")
                 corpo = m.get(tipo, {}) if isinstance(m.get(tipo), dict) else {}
                 testo = {"text": corpo.get("body"), "button": corpo.get("text")}.get(tipo, corpo.get("caption"))
-                if tipo not in ("text", "image", "button"):
+                # Dal PC le foto partono spesso come documento: un documento immagine si tratta come una foto.
+                foto = tipo == "image" or (tipo == "document" and str(corpo.get("mime_type", "")).startswith("image/"))
+                if tipo == "unsupported":
+                    testo = ("[messaggio che WhatsApp non passa alle app, per esempio una foto a visualizzazione singola: "
+                             "chiedete di rimandarlo come foto normale]")
+                elif tipo not in ("text", "image", "button") and not foto:
                     testo = f"[{ALTRI_TIPI.get(tipo, tipo)} non letto]"
                 out.append(("messaggio", contatto, {
                     "id": m["id"], "tipo": tipo, "testo": testo or "",
-                    "media_id": corpo.get("id") if tipo == "image" else None,
+                    "media_id": corpo.get("id") if foto else None,
                     "quando": datetime.fromtimestamp(int(m.get("timestamp", 0))).isoformat(timespec="seconds")}))
             for s in v.get("statuses", []):
                 errori = s.get("errors") or []
@@ -168,9 +173,12 @@ class Cloud:
         info = self._chiama(f"{self.base}/{media_id}")
         if not info.get("url", "").startswith(("https://", self.radice)):
             raise ErroreWhatsApp("URL della foto non valido")
-        dati = self._chiama(info["url"], grezzo=True)
+        tipo = info.get("mime_type", "image/jpeg").split(";")[0].strip().lower()
         # Su Windows mimetypes legge il registro e per image/jpeg può rispondere .jfif: estensioni fisse.
-        est = ESTENSIONI.get(info.get("mime_type", "").split(";")[0].strip(), ".jpg")
+        if tipo not in ESTENSIONI:
+            raise ErroreWhatsApp(f"formato {tipo} non leggibile: chiedete di rimandarla come foto")
+        dati = self._chiama(info["url"], grezzo=True)
+        est = ESTENSIONI[tipo]
         p = Path(cartella) / f"{hashlib.sha1(media_id.encode()).hexdigest()[:20]}{est}"
         p.write_bytes(dati)
         return p

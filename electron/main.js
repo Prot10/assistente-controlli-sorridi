@@ -1,5 +1,5 @@
 // Guscio desktop: avvia il backend Python, apre la sua pagina in una finestra e tiene l'app aggiornata.
-const { app, BrowserWindow, dialog, shell } = require("electron");
+const { app, BrowserWindow, Notification, dialog, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const { spawn, execFile } = require("child_process");
 const fs = require("fs");
@@ -15,6 +15,11 @@ let backend = null;
 let indirizzo = null;
 let registro = null;
 let uscendo = false;
+let cursore = -1;            // ultimo evento già visto da /api/notifiche
+const aperte = new Set();    // le notifiche restano referenziate, altrimenti il clic si perde
+
+// Su Windows una notifica compare solo se l'app ha il suo AppUserModelId, lo stesso del collegamento dell'installer.
+app.setAppUserModelId("it.allineatorisorridi.assistente-controlli");
 
 function scrivi(riga) {
   registro.write(`${new Date().toISOString()} ${riga}\n`);
@@ -93,7 +98,8 @@ function apriFinestra() {
   finestra = new BrowserWindow({
     width: 1320, height: 880, minWidth: 900, minHeight: 600, title: "Assistente controlli",
     backgroundColor: "#f6f8fa", show: false,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    // Senza rallentamenti in secondo piano: la pagina continua ad aggiornare le richieste anche ridotta a icona.
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
   });
   finestra.once("ready-to-show", () => finestra.show());
   // Solo la pagina del backend resta nella finestra; ogni altro indirizzo si apre nel browser.
@@ -110,6 +116,41 @@ function apriFinestra() {
   });
   finestra.on("closed", () => (finestra = null));
   finestra.loadURL(indirizzo);
+}
+
+// Notifiche di sistema: il backend dice cosa è successo e cosa mostrare secondo le impostazioni della pagina.
+function notifiche() {
+  const giro = async () => {
+    try {
+      const r = await fetch(`${indirizzo}/api/notifiche?dopo=${cursore}`, { headers: { "X-Assistente": "1" } });
+      const d = await r.json();
+      cursore = d.ultimo;
+      for (const e of d.eventi) mostra(e, d.suono);
+    } catch { /* il backend si sta riavviando: si riprova al giro dopo */ }
+  };
+  giro();
+  setInterval(giro, 4000);
+}
+
+function mostra(e, suono) {
+  scrivi(`notifica ${e.tipo} ${e.rid ?? ""}: ${e.titolo}${suono ? "" : " (senza suono)"}`);
+  if (!Notification.isSupported()) return scrivi("notifiche non supportate su questo sistema");
+  const n = new Notification({ title: e.titolo, body: e.testo, silent: !suono, sound: suono ? "Glass" : undefined,
+    urgency: e.operatore ? "critical" : "normal", timeoutType: e.operatore ? "never" : "default" });
+  aperte.add(n);
+  const via = () => aperte.delete(n);
+  n.on("click", () => { via(); apriRichiesta(e.rid); });
+  n.on("close", via);
+  n.show();
+}
+
+function apriRichiesta(rid) {
+  if (!finestra) apriFinestra();
+  if (finestra.isMinimized()) finestra.restore();
+  finestra.show();
+  finestra.focus();
+  const id = Number(rid) || 0;
+  finestra.webContents.executeJavaScript(`location.hash = "#richieste"; setTimeout(() => document.getElementById("r${id}")?.scrollIntoView({block: "center", behavior: "smooth"}), 700);`).catch(() => {});
 }
 
 function aggiornamenti() {
@@ -155,6 +196,7 @@ if (!app.requestSingleInstanceLock()) {
       return;
     }
     apriFinestra();
+    notifiche();
     aggiornamenti();
     app.on("activate", () => {
       if (!finestra) apriFinestra();

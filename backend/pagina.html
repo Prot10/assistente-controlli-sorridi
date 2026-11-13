@@ -37,6 +37,23 @@
 .richiesta .esito{border-left:1px solid var(--line)}
 .msg{margin:0 0 8px;white-space:pre-wrap}.msg time{color:var(--faint);font-size:11.5px;margin-right:8px;font-variant-numeric:tabular-nums}
 .foto img{display:block;max-width:100%;max-height:180px;margin:4px 0 8px;border:1px solid var(--line);border-radius:8px;cursor:zoom-in}
+.lavoro>b{display:flex;gap:8px;align-items:baseline;color:var(--head);font-size:14px;margin-bottom:4px}
+.passi{list-style:none;margin:14px 0 4px;padding:0;display:grid;gap:9px}
+.passi li{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;color:var(--muted)}
+.passi li i{width:11px;height:11px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+.passi li.fatto i{background:#00b295;border-color:#00b295}
+.passi li.corso{color:var(--ink)}
+.passi li.corso i{border-color:#00b295;border-top-color:transparent;animation:gira .9s linear infinite}
+.passi time{font-size:11.5px;color:var(--faint)}
+@keyframes gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.passi li.corso i{animation:none;background:#f0a63a;border-color:#f0a63a}}
+.rotta{position:relative;background:var(--raised)}.rotta img{opacity:0}
+.rotta::after{content:"Foto non disponibile";position:absolute;inset:0;display:grid;place-items:center;padding:6px;text-align:center;font-size:11px;color:var(--muted)}
+.serve-op{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:12px 14px;border-radius:10px;background:#fde8e6;color:#8a1f12;border:1px solid #f3b4ab;font-size:13px}
+.serve-op b{display:block;font-size:14px;margin-bottom:2px}
+.richiesta.op{box-shadow:inset 4px 0 0 #d6452f}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .serve-op{background:#3a1814;color:#ffc9c0;border-color:#6b2a20}}
+:root[data-theme=dark] .serve-op{background:#3a1814;color:#ffc9c0;border-color:#6b2a20}
 .galleria{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:2px 0 6px}
 .galleria[data-n="1"]{grid-template-columns:minmax(0,200px)}
 .miniatura{position:relative;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--raised);aspect-ratio:3/4;cursor:zoom-in}
@@ -65,7 +82,21 @@
 .contatto{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
 .contatto:hover{background:var(--raised)}.contatto.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 .contatto span{display:grid;min-width:0;line-height:1.3}.contatto b{color:var(--head);font-weight:600}.contatto small{color:var(--muted);font-size:11.5px}
-.filo{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+.filo{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0}
+.filo>.bolle{grid-row:2}.filo>#scrivi{grid-row:3}
+.filo-testa{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);min-width:0}
+.filo-testa .chi{display:grid;min-width:0;line-height:1.3;flex:1}.filo-testa .chi b{color:var(--head)}.filo-testa .chi small{color:var(--muted);font-size:11.5px}
+.filo-testa input{max-width:260px}
+.cerca-chat{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.cerca-chat input{flex:1;min-width:0}
+.album{padding:4px;width:min(330px,70%)}
+.nota-zip{margin:-6px 0 18px;max-width:760px}
+.mosaico{display:grid;grid-template-columns:1fr 1fr;gap:3px;border-radius:8px;overflow:hidden}
+.mosaico.n3 .tassello:first-child{grid-column:span 2;aspect-ratio:2/1}
+.tassello{position:relative;padding:0;border:0;aspect-ratio:1;background:var(--raised);cursor:zoom-in;overflow:hidden}
+.tassello img{display:block;width:100%;height:100%;object-fit:cover}
+.tassello b{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);color:#fff;font-size:22px;font-weight:600}
+.album .didascalia{display:block;padding:6px 7px 0}.album>small{display:block;padding:2px 7px 3px}
 .bolle{display:flex;flex-direction:column;gap:6px;padding:16px;overflow:auto;background:var(--bg)}
 .bolla{max-width:70%;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);white-space:pre-wrap}
 .bolla.out{align-self:flex-end;background:var(--tint);border-color:var(--accent-soft)}
@@ -165,8 +196,8 @@
 
     <section class="vista" id="v-chat">
       <header class="page-head"><div><span class="eyebrow">Linea WhatsApp di controllo</span><h1>Chat</h1><p>Le conversazioni complete, con lo stato di consegna.</p></div></header>
-      <div class="panel chat"><div class="contatti" id="contatti"></div>
-        <div class="filo"><div class="bolle" id="bolle"><div class="empty"><b>Scegli una conversazione</b></div></div>
+      <div class="panel chat"><div class="contatti"><div class="cerca-chat"><input class="input" id="cerca-chat" type="search" placeholder="Cerca nome o numero" aria-label="Cerca nelle chat"><button class="btn ghost sm" id="vedi-archiviate" type="button">Archiviate</button></div><div id="contatti"></div></div>
+        <div class="filo"><div class="filo-testa" id="filo-testa" hidden></div><div class="bolle" id="bolle"><div class="empty"><b>Scegli una conversazione</b></div></div>
           <div class="scrivi" id="scrivi" hidden><textarea class="input area" id="testo-libero" placeholder="Scrivi un messaggio"></textarea><button class="btn primary md" id="manda-libero">Invia</button></div></div></div>
     </section>
 
@@ -185,7 +216,8 @@
 
     <section class="vista" id="v-storico">
       <header class="page-head"><div><span class="eyebrow">Andamento</span><h1>Storico</h1><p>Quanto le proposte vengono accettate: è la base per decidere l'invio automatico.</p></div>
-        <div class="page-actions"><a class="btn soft md" href="/api/esporta.csv"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Esporta CSV</a></div></header>
+        <div class="page-actions"><a class="btn soft md" href="/api/esporta.csv"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Esporta CSV</a><a class="btn primary md" href="/api/esporta.zip" title="Messaggi, foto, valutazioni, risposte e decisioni di ogni richiesta"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Scarica tutti i dati (zip)</a></div></header>
+      <p class="meta nota-zip">Lo zip contiene ogni richiesta con messaggi, foto, valutazione, risposta proposta e inviata, modifiche al testo e decisioni corrette. Contiene dati dei pazienti: mandatelo solo per canali riservati.</p>
       <div class="tiles" id="tiles"></div>
       <div class="table-wrap"><table class="table"><thead><tr><th>Decisione del modello</th><th>Richieste chiuse</th><th>Confermate dall'operatore</th><th>Inviate senza modifiche</th></tr></thead><tbody id="per-dec"></tbody></table></div>
     </section>
@@ -197,7 +229,7 @@
         <button role="tab" data-s="whatsapp" class="on"><i class="punto" id="t-wa"></i>WhatsApp</button>
         <button role="tab" data-s="chatgpt"><i class="punto" id="t-codex"></i>ChatGPT</button>
         <button role="tab" data-s="valutazione"><i class="punto" id="t-es"></i>Valutazione</button>
-        <button role="tab" data-s="invio">Invio</button>
+        <button role="tab" data-s="invio">Invio</button><button role="tab" data-s="notifiche">Notifiche</button>
       </nav>
       <div class="scheda" data-s="whatsapp" role="tabpanel">
         <section class="panel"><header><h2>WhatsApp Business</h2><span class="chip" id="wa-chip"></span></header>
@@ -246,9 +278,25 @@
               <label class="form-field"><span>Ragionamento</span><select id="i-sforzo"><option value="low">Basso</option><option value="medium">Medio</option><option value="high">Alto</option></select><small>Più alto è più attento, ma più lento.</small></label>
             </div>
           </section>
+          <section class="panel"><header><h2>Quando analizzare</h2></header>
+            <label class="form-field"><span>Attesa dopo l'ultimo messaggio</span><select id="i-attesa_secondi"><option value="20">20 secondi</option><option value="60">1 minuto</option><option value="120">2 minuti</option><option value="300">5 minuti</option><option value="600">10 minuti</option><option value="900">15 minuti</option></select><small>Spesso il medico scrive e manda le foto qualche minuto dopo: quello che arriva entro questa attesa finisce nella stessa richiesta. Se arriva altro dopo l'analisi, la richiesta si rianalizza da sola finché non è stata inviata. In Richieste si può sempre premere "Analizza ora".</small></label>
+          </section>
           <section class="panel"><header><h2>Esempi della guida</h2><span class="chip" id="es-chip"></span></header>
             <p class="meta">Le 4 foto della guida "Gestione degli allineatori", una per grado: il modello le usa per tarare il giudizio. Sono foto di pazienti, quindi restano solo su questo PC e non fanno parte dell'app. Finché ne manca anche una, ogni foto ricevuta passa da un operatore e l'invio automatico resta fermo: senza esempi il modello può dare per buona una foto che non lo è.</p>
             <div class="esempi" id="esempi"></div>
+          </section>
+        </div>
+      </div>
+      <div class="scheda" data-s="notifiche" role="tabpanel" hidden>
+        <div class="stack">
+          <section class="panel"><header><h2>Notifiche sullo schermo</h2></header>
+            <p class="meta">Compaiono come le altre notifiche del computer, anche con l'app in secondo piano o ridotta a icona. Cliccandole si apre la richiesta.</p>
+            <div class="form two" style="margin-top:12px">
+              <label class="form-field"><span>Quando avvisare</span><select id="i-notifiche"><option value="tutte">Ogni nuovo messaggio e ogni proposta pronta</option><option value="proposte">Quando una proposta è pronta</option><option value="operatore">Solo quando serve un operatore</option><option value="mai">Mai</option></select><small>Le richieste che partono con l'invio automatico non avvisano.</small></label>
+              <div class="form-field"><span>Suono</span><label class="switch"><input type="checkbox" id="i-notifiche_suono"><i></i><span>Con il suono di notifica del computer</span></label></div>
+            </div>
+            <div class="azioni" style="margin-top:14px"><button class="btn soft md" id="prova-notifica">Prova la notifica</button><span class="meta" id="prova-esito"></span></div>
+            <p class="meta" style="margin-top:12px">Se su Windows non compare niente: Impostazioni di Windows → Sistema → Notifiche, e attivate "Assistente controlli". Con "Non disturbare" attivo le notifiche arrivano senza suono.</p>
           </section>
         </div>
       </div>
@@ -295,6 +343,7 @@ const ICONA = {
   invia: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   ok: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
   matita: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  avviso: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   orologio: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   robot: '<rect width="16" height="12" x="4" y="8" rx="2"/><path d="M12 8V4H8"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -339,11 +388,13 @@ async function richieste() {
   const ids = new Set(lista.map(r => "r" + r.id));
   [...box.children].forEach(c => { if (!ids.has(c.id)) c.remove(); });
   for (const r of [...lista].reverse()) {
-    const firma = [r.stato, r.analizzata, r.messaggi.length, r.errore, r.messaggi.filter(m => m.foto).length].join("|");
+    const firma = [r.stato, r.analizzata, r.messaggi.length, r.errore, r.messaggi.filter(m => m.foto).length,
+      r.lavoro ? r.lavoro.passi.length : "", r.foto_scaricate, r.analisi_tra === 0].join("|");
     const el = document.getElementById("r" + r.id);
     if (el && (firme[r.id] === firma || el.contains(document.activeElement))) continue;
     const nuovo = document.createElement("article");
-    nuovo.className = "panel richiesta"; nuovo.id = "r" + r.id; nuovo.innerHTML = card(r);
+    nuovo.className = "panel richiesta" + (r.esito && r.esito.serve_operatore && ["proposta", "errore"].includes(r.stato) ? " op" : "");
+    nuovo.id = "r" + r.id; nuovo.innerHTML = card(r);
     el ? el.replaceWith(nuovo) : box.prepend(nuovo);
     menus(nuovo);
     firme[r.id] = firma;
@@ -355,17 +406,25 @@ function card(r) {
   // Le foto sono numerate come le vede il modello ("immagine 1", "immagine 2"…), così il motivo si ritrova.
   const foto = r.messaggi.filter(m => m.foto), n = m => foto.indexOf(m) + 1;
   const galleria = foto.length ? `<div class="galleria" data-n="${foto.length}">${foto.map(m => `<button class="miniatura" type="button" title="Ingrandisci la foto ${n(m)}"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto ${n(m)} del paziente" data-nota="${ora(m.quando)}" loading="lazy"><b>${n(m)}</b></button>`).join("")}</div>` : "";
-  const msgs = r.messaggi.map(m => `${m.foto_errore ? `<div class="notice stop">Foto non scaricata: ${esc(m.foto_errore)}</div>` : ""}
-    ${m.foto || m.testo ? `<p class="msg"><time>${ora(m.quando)}</time>${m.foto ? `<span class="n-foto" title="Foto ${n(m)}">${n(m)}</span>` : ""}${m.foto && !m.testo ? `<span class="meta">foto</span>` : esc(m.testo)}</p>` : ""}`).join("");
-  return `<header><span class="avatar">${esc(iniziali(r.nome))}</span><h2>${nome}</h2><small>${r.wa_id ? "+" + esc(r.wa_id) : ""} · richiesta ${r.id}</small><span class="grow"></span><span class="chip ${tono}">${st}</span></header>
+  // Foto senza testo mandate di fila: una riga sola, come un album su WhatsApp.
+  const righe = [];
+  for (const m of r.messaggi) {
+    const g = righe[righe.length - 1], sola = m.foto && !m.testo && !m.foto_errore;
+    if (sola && g && g.album) g.album.push(m); else righe.push(sola ? {album: [m]} : {m});
+  }
+  const msgs = righe.map(({m, album}) => album
+    ? `<p class="msg"><time>${ora(album[0].quando)}</time>${album.map(x => `<span class="n-foto" title="Foto ${n(x)}">${n(x)}</span>`).join(" ")}<span class="meta">${album.length === 1 ? "foto" : album.length + " foto"}</span></p>`
+    : `${m.foto_errore ? `<div class="notice stop">Foto non scaricata: ${esc(m.foto_errore)}</div>` : ""}
+    ${m.foto || m.testo ? `<p class="msg"><time>${ora(m.quando)}</time>${m.foto ? `<span class="n-foto" title="Foto ${n(m)}">${n(m)}</span>` : ""}${esc(m.testo)}</p>` : ""}`).join("");
+  return `<header><span class="avatar">${esc(iniziali(r.nome))}</span><h2>${nome}</h2><small>${r.wa_id ? "+" + esc(r.wa_id) : ""} · richiesta ${r.id}</small><span class="grow"></span>${r.esito && r.esito.serve_operatore && ["proposta", "errore"].includes(r.stato) ? `<span class="chip stop">Serve un operatore</span>` : ""}<span class="chip ${tono}">${st}</span></header>
     <div class="msgs">${galleria}${msgs}</div><div class="esito">${esito(r)}</div>`;
 }
 
 function esito(r) {
-  if (r.stato === "nuova" || r.stato === "analisi") return `<div class="empty">${svg("orologio", 24)}<b>${r.stato === "analisi" ? "Analisi in corso" : "In attesa di altri messaggi"}</b><span>La proposta compare da sola.</span></div>`;
+  if (r.stato === "nuova" || r.stato === "analisi") return lavoro(r);
   const e = r.esito;
   const testa = !e ? "" : `<div class="testa">${e.tipo === "foto_controllo" ? `<span class="chip ${TONO[e.decisione]}">${DEC[e.decisione]}</span>${e.grado ? `<span class="chip">Grado ${e.grado}</span>` : ""}` : `<span class="chip accent">${TIPO[e.tipo]}</span>`}
-    ${e.serve_operatore ? `<span class="chip stop">Serve un operatore</span>` : ""}<span class="meta">confidenza ${e.confidenza} · ${esc(r.modello)}</span></div>
+<span class="meta">confidenza ${e.confidenza} · ${esc(r.modello)}</span></div>
     <span class="etichetta">Motivo</span>${esc(e.motivo)}${e.azione ? `<span class="etichetta">Azione secondo la guida</span>${esc(e.azione)}` : ""}`;
   if (r.stato === "inviata" || r.stato === "scartata") {
     const corretta = r.decisione_operatore && e && e.tipo === "foto_controllo" && r.decisione_operatore !== e.decisione;
@@ -373,13 +432,49 @@ function esito(r) {
       <p class="meta">${esc(r.operatore)} · ${ora(r.decisa)}${r.automatica ? " · automatica" : ""}${r.modificata ? " · modificata" : ""}${corretta ? ` · decisione corretta in “${DEC[r.decisione_operatore]}”` : ""}</p>`;
   }
   const scelta = e && e.tipo === "foto_controllo" ? `<span class="meta campo-c">Decisione corretta <select class="compatto" data-c="decisione" aria-label="Decisione corretta">${Object.entries(DEC).map(([k, v]) => `<option value="${k}" ${k === e.decisione ? "selected" : ""}>${v}</option>`).join("")}</select></span>` : "";
-  return `${r.errore ? `<div class="notice stop">${esc(r.errore)}</div>` : ""}${testa}
+  const annunciate = e && e.tipo === "foto_controllo" && !r.messaggi.some(m => m.foto)
+    ? `<div class="notice">Le foto sono annunciate ma non ancora arrivate: quando arrivano, la richiesta si rianalizza da sola con tutte.</div>` : "";
+  const op = e && e.serve_operatore ? `<div class="serve-op">${svg("avviso", 18)}<div><b>Serve un operatore</b>Rileggete la valutazione e correggete la risposta se serve, poi inviatela: l'agente non è sicuro o il caso va seguito da una persona.</div></div>` : "";
+  return `${op}${r.errore ? `<div class="notice stop">${esc(r.errore)}</div>` : ""}${annunciate}${testa}
     <span class="etichetta">Risposta da inviare</span><textarea class="input area" data-c="testo">${esc(r.risposta_proposta || "")}</textarea>
     ${r.fuori_finestra ? `<div class="notice">Sono passate più di 24 ore dall'ultimo messaggio del paziente: WhatsApp accetta solo messaggi modello approvati.</div>` : ""}
     <div class="azioni"><button class="btn primary md" data-az="invia">${svg("invia")}Invia</button><button class="btn soft md" data-az="scarta">${svg("x")}Scarta</button>
       <span class="grow"></span>${scelta}</div>
     <div class="azioni"><button class="btn ghost sm" data-az="rianalizza">${svg("giro", 13)}Rianalizza</button></div>`;
 }
+
+// Cosa sta facendo l'agente, al posto della proposta finché non è pronta.
+const passoLi = (stato, html, quando) => `<li class="${stato}"><i></i><span>${html}</span>${quando ? `<time>${new Date(quando).toLocaleTimeString("it-IT")}</time>` : ""}</li>`;
+const durata = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+function lavoro(r) {
+  if (r.stato === "nuova") {
+    const n = r.messaggi.length, scarica = r.foto_attese > r.foto_scaricate, righe = [passoLi("fatto", n === 1 ? "1 messaggio ricevuto" : `${n} messaggi ricevuti`)];
+    if (r.foto_attese) righe.push(passoLi(scarica ? "corso" : "fatto", scarica ? `Scarica le foto: ${r.foto_scaricate} di ${r.foto_attese}` : r.foto_attese === 1 ? "1 foto scaricata" : `${r.foto_attese} foto scaricate`));
+    righe.push(r.analisi_tra > 0
+      ? passoLi("corso", `Aspetta altri messaggi: l'analisi parte tra <b data-fine="${Date.now() + r.analisi_tra * 1000}">${durata(r.analisi_tra)}</b>`)
+      : passoLi("corso", scarica ? "L'analisi parte appena le foto sono scaricate" : "Avvia l'analisi"));
+    return `<div class="lavoro"><b>In attesa di altri messaggi</b><p class="meta">Spesso il medico scrive e manda le foto qualche minuto dopo: quello che arriva finisce in questa richiesta.</p>
+      <ol class="passi">${righe.join("")}</ol><div class="azioni">${r.analisi_tra > 0 ? `<button class="btn soft sm" data-az="analizza">${svg("giro", 13)}Analizza ora</button>` : ""}<button class="btn ghost sm" data-az="ferma" title="La richiesta resta aperta: rispondete a mano o scartatela">${svg("x", 13)}Non analizzare</button></div></div>`;
+  }
+  const passi = r.lavoro ? r.lavoro.passi : [], ultimi = passi.slice(-8);
+  const righe = ultimi.map((x, i) => passoLi(i === ultimi.length - 1 ? "corso" : "fatto", esc(x.testo), x.ora));
+  if (!passi.length) righe.push(passoLi("corso", "Prepara i messaggi e le foto per il modello"));
+  const da = r.lavoro ? new Date(r.lavoro.inizio).getTime() : Date.now();
+  return `<div class="lavoro"><b>Analisi in corso <span class="meta" data-da="${da}">${durata((Date.now() - da) / 1000)}</span></b><p class="meta">Di solito ci vogliono da 1 a 3 minuti. La proposta compare qui da sola.</p><ol class="passi">${righe.join("")}</ol>
+    <div class="azioni"><button class="btn ghost sm" data-az="ferma" title="La richiesta resta aperta: rispondete a mano o scartatela">${svg("x", 13)}Ferma l'analisi</button></div></div>`;
+}
+setInterval(() => {
+  $$("[data-fine]").forEach(el => el.textContent = durata((Number(el.dataset.fine) - Date.now()) / 1000));
+  $$("[data-da]").forEach(el => el.textContent = durata((Date.now() - Number(el.dataset.da)) / 1000));
+}, 1000);
+// Una foto che non si carica si riprova tre volte; poi resta un riquadro che lo dice, non un'icona rotta.
+document.addEventListener("error", ev => {
+  const img = ev.target;
+  if (!(img instanceof HTMLImageElement) || !img.src.includes("/api/foto/")) return;
+  const n = Number(img.dataset.riprova || 0);
+  if (n < 3) { img.dataset.riprova = n + 1; setTimeout(() => { img.src = img.src.split("?")[0] + "?r=" + Date.now(); }, 2000 * (n + 1)); return; }
+  img.closest(".miniatura, .foto, .tassello")?.classList.add("rotta");
+}, true);
 
 $("#richieste").onclick = async ev => {
   const mini = ev.target.closest(".miniatura");
@@ -390,6 +485,8 @@ $("#richieste").onclick = async ev => {
   try {
     if (b.dataset.az === "invia") { await api(`/api/richieste/${id}/invia`, {testo: val("testo"), decisione: val("decisione")}); toast("Messaggio inviato"); }
     if (b.dataset.az === "scarta") { await api(`/api/richieste/${id}/scarta`, {decisione: val("decisione")}); toast("Richiesta scartata"); }
+    if (b.dataset.az === "analizza") { await api(`/api/richieste/${id}/analizza`, {}); delete firme[id]; }
+    if (b.dataset.az === "ferma") { await api(`/api/richieste/${id}/ferma`, {}); delete firme[id]; toast("Analisi fermata: la richiesta resta aperta"); }
     if (b.dataset.az === "rianalizza") { await api(`/api/richieste/${id}/rianalizza`, {}); delete firme[id]; }
     document.activeElement.blur(); await richieste(); aggiornaStato();
   } catch (e) { toast(e.message); b.disabled = false; }
@@ -397,22 +494,77 @@ $("#richieste").onclick = async ev => {
 $("#filtro").onclick = e => { const b = e.target.closest("button"); if (!b) return; filtro = b.dataset.f; $$("#filtro button").forEach(x => x.classList.toggle("on", x === b)); $("#richieste").innerHTML = ""; Object.keys(firme).forEach(k => delete firme[k]); richieste(); };
 
 // ---------------------------------------------------------------- chat
+let archiviate = false, elenco = [];
+const nomeChat = c => c.alias || c.nome || c.username || (c.wa_id ? "+" + c.wa_id : c.id);
 async function contatti() {
-  const l = await api("/api/contatti"), firma = JSON.stringify(l) + contatto;
-  if ($("#contatti").dataset.firma !== firma) $("#contatti").dataset.firma = firma, $("#contatti").innerHTML = l.length ? l.map(c => `<button class="contatto ${c.id === contatto ? "on" : ""}" data-id="${esc(c.id)}"><span class="avatar">${esc(iniziali(c.nome))}</span><span><b>${esc(c.nome || c.username || c.wa_id || c.id)}</b><small>${ora(c.ultimo)}</small></span></button>`).join("") : `<div class="empty"><b>Ancora nessun messaggio</b></div>`;
+  const d = await api(`/api/contatti?archiviate=${archiviate ? 1 : 0}`), cerca = $("#cerca-chat").value.trim().toLowerCase();
+  elenco = d.contatti;
+  $("#vedi-archiviate").textContent = archiviate ? "Tutte le chat" : `Archiviate${d.archiviate ? ` (${d.archiviate})` : ""}`;
+  const l = elenco.filter(c => !cerca || [c.alias, c.nome, c.username, c.wa_id].some(x => x && String(x).toLowerCase().includes(cerca)));
+  const firma = JSON.stringify(l) + contatto + archiviate;
+  if ($("#contatti").dataset.firma !== firma) $("#contatti").dataset.firma = firma, $("#contatti").innerHTML = l.length ? l.map(c => `<button class="contatto ${c.id === contatto ? "on" : ""}" data-id="${esc(c.id)}"><span class="avatar">${esc(iniziali(nomeChat(c)))}</span><span><b>${esc(nomeChat(c))}</b><small>${c.alias && c.nome ? esc(c.nome) + " · " : ""}${ora(c.ultimo)}</small></span></button>`).join("")
+    : `<div class="empty"><b>${cerca ? "Nessuna chat trovata" : archiviate ? "Nessuna chat archiviata" : "Ancora nessun messaggio"}</b></div>`;
+  testaChat();
   if (contatto) filo();
 }
+function testaChat(rinomina = false) {
+  const c = elenco.find(x => x.id === contatto), t = $("#filo-testa");
+  if (!c) { t.hidden = true; return; }
+  t.hidden = false;
+  t.innerHTML = rinomina
+    ? `<input class="input" id="nuovo-nome" value="${esc(c.alias || c.nome || "")}" placeholder="Nome da mostrare" maxlength="80" aria-label="Nome della chat"><button class="btn primary sm" data-chat="salva-nome">Salva</button><button class="btn ghost sm" data-chat="annulla">Annulla</button>`
+    : `<span class="avatar">${esc(iniziali(nomeChat(c)))}</span><span class="chi"><b>${esc(nomeChat(c))}</b><small>${c.wa_id ? "+" + esc(c.wa_id) : esc(c.id)}${c.alias && c.nome ? " · su WhatsApp: " + esc(c.nome) : ""}</small></span>
+      <button class="btn ghost sm" data-chat="rinomina">${svg("matita", 13)}Rinomina</button>
+      <button class="btn ghost sm" data-chat="archivia">${archiviate ? "Ripristina" : "Archivia"}</button>
+      <button class="btn ghost sm" data-chat="cancella">${svg("x", 13)}Cancella</button>`;
+  if (rinomina) { const i = $("#nuovo-nome"); i.focus(); i.select(); i.onkeydown = e => { if (e.key === "Enter") azioneChat("salva-nome"); if (e.key === "Escape") testaChat(); }; }
+}
+async function azioneChat(az) {
+  const c = elenco.find(x => x.id === contatto); if (!c) return;
+  const via = `/api/contatti/${encodeURIComponent(c.id)}`;
+  try {
+    if (az === "rinomina") return testaChat(true);
+    if (az === "annulla") return testaChat();
+    if (az === "salva-nome") { await api(`${via}/rinomina`, {nome: $("#nuovo-nome").value}); toast("Nome salvato"); }
+    if (az === "archivia") { await api(`${via}/archivia`, {archiviata: !archiviate}); toast(archiviate ? "Chat ripristinata" : "Chat archiviata: torna qui se scrive di nuovo"); contatto = null; }
+    if (az === "cancella") {
+      if (!await conferma(`Cancellare la chat con ${nomeChat(c)}?`, "Messaggi, richieste e foto di questa chat vengono tolti da questo PC. Su WhatsApp la chat resta; nel registro resta solo che la chat è stata cancellata.", "Cancella", "danger")) return;
+      await api(`${via}/cancella`, {}); toast("Chat cancellata"); contatto = null;
+    }
+    if (!contatto) { $("#bolle").innerHTML = `<div class="empty"><b>Scegli una conversazione</b></div>`; delete $("#bolle").dataset.firma; $("#scrivi").hidden = true; }
+    $("#contatti").dataset.firma = ""; await contatti();
+  } catch (e) { toast(e.message); }
+}
+$("#filo-testa").onclick = e => { const b = e.target.closest("[data-chat]"); if (b) azioneChat(b.dataset.chat); };
+$("#cerca-chat").oninput = () => contatti();
+$("#vedi-archiviate").onclick = () => { archiviate = !archiviate; contatto = null; $("#bolle").innerHTML = `<div class="empty"><b>Scegli una conversazione</b></div>`; delete $("#bolle").dataset.firma; $("#scrivi").hidden = true; contatti(); };
 async function filo() {
   const l = await api(`/api/contatti/${encodeURIComponent(contatto)}/messaggi`), b = $("#bolle"), giu = b.scrollTop + b.clientHeight >= b.scrollHeight - 30, firma = contatto + JSON.stringify(l);
   $("#scrivi").hidden = false;
   if (b.dataset.firma === firma) return;
   b.dataset.firma = firma;
-  b.innerHTML = l.map(m => `<div class="bolla ${m.direzione}">${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente" data-nota="${ora(m.quando)}"></div>` : ""}${esc(m.testo)}
-    <small>${ora(m.quando)}${m.direzione === "out" ? ` · ${esc(m.operatore || "")} · ${SPUNTE[m.stato] || esc(m.stato)}${m.errore ? " · " + esc(m.errore) : ""}` : ""}</small></div>`).join("");
+  const gruppi = [];
+  for (const m of l) {
+    const g = gruppi[gruppi.length - 1];
+    if (m.foto && g && g.foto && g.dir === m.direzione && new Date(m.quando) - new Date(g.ultimo) <= 120000) { g.foto.push(m); g.ultimo = m.quando; continue; }
+    gruppi.push(m.foto ? {foto: [m], dir: m.direzione, ultimo: m.quando} : {m});
+  }
+  const bolla = m => `<div class="bolla ${m.direzione}">${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente" data-nota="${ora(m.quando)}"></div>` : ""}${esc(m.testo)}
+    <small>${ora(m.quando)}${m.direzione === "out" ? ` · ${esc(m.operatore || "")} · ${SPUNTE[m.stato] || esc(m.stato)}${m.errore ? " · " + esc(m.errore) : ""}` : ""}</small></div>`;
+  b.innerHTML = gruppi.map(g => {
+    if (!g.foto) return bolla(g.m);
+    if (g.foto.length === 1) return bolla(g.foto[0]);
+    const n = g.foto.length, testi = g.foto.filter(m => m.testo);
+    return `<div class="bolla ${g.dir} album"><div class="mosaico n${Math.min(n, 4)}">${g.foto.map((m, k) => `<button type="button" class="tassello" data-k="${k}" ${k > 3 ? "hidden" : ""} aria-label="Foto ${k + 1} di ${n}"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente" data-nota="${ora(m.quando)}" loading="lazy">${k === 3 && n > 4 ? `<b>+${n - 4}</b>` : ""}</button>`).join("")}</div>${testi.map(m => `<span class="didascalia">${esc(m.testo)}</span>`).join("")}<small>${ora(g.foto[0].quando)} · ${n} foto</small></div>`;
+  }).join("");
   if (giu) b.scrollTop = b.scrollHeight;
 }
 $("#contatti").onclick = e => { const c = e.target.closest(".contatto"); if (!c) return; contatto = c.dataset.id; $$(".contatto").forEach(x => x.classList.toggle("on", x === c)); filo().then(() => $("#bolle").scrollTop = 1e9); };
-$("#bolle").onclick = e => { if (e.target.matches(".foto img")) { const tutte = $$("#bolle .foto img"); apriFoto(tutte, tutte.indexOf(e.target)); } };
+$("#bolle").onclick = e => {
+  const t = e.target.closest(".tassello");
+  if (t) return apriFoto([...t.closest(".mosaico").querySelectorAll("img")], Number(t.dataset.k));
+  if (e.target.matches(".foto img")) { const tutte = $$("#bolle .foto img"); apriFoto(tutte, tutte.indexOf(e.target)); }
+};
 $("#manda-libero").onclick = async () => {
   const t = $("#testo-libero").value.trim(); if (!t) return;
   try { await api(`/api/contatti/${encodeURIComponent(contatto)}/invia`, {testo: t}); $("#testo-libero").value = ""; filo(); } catch (e) { toast(e.message); }
@@ -466,22 +618,27 @@ async function storico() {
 }
 
 // ---------------------------------------------------------------- impostazioni
-const NUMERI = ["porta_webhook", "auto_confidenza"];
-const CAMPI = ["sforzo", "operatore", "tunnel", "comando_tunnel", "indirizzo_pubblico", "wa_waba_id", "wa_phone_number_id", "wa_versione", "porta_webhook", "auto_confidenza"];
+const NUMERI = ["porta_webhook", "auto_confidenza", "attesa_secondi"];
+const CAMPI = ["sforzo", "attesa_secondi", "notifiche", "operatore", "tunnel", "comando_tunnel", "indirizzo_pubblico", "wa_waba_id", "wa_phone_number_id", "wa_versione", "porta_webhook", "auto_confidenza"];
 async function impostazioni() {
   const imp = await api("/api/impostazioni");
   $("#modello").textContent = imp.modello;
   esempi(); whatsapp();
   for (const k of CAMPI) { const el = $("#i-" + k); if (el.type === "password") { el.value = ""; el.placeholder = imp[k] || "non impostato"; } else el.value = imp[k]; }
   $("#i-auto_invio").checked = imp.auto_invio;
+  $("#i-notifiche_suono").checked = imp.notifiche_suono;
   $$(".auto-dec").forEach(c => c.checked = imp.auto_decisioni.includes(c.value));
   menus($("#v-impostazioni"));
   $("#operatore").textContent = imp.operatore || "Operatore"; $("#iniziali").textContent = iniziali(imp.operatore);
 }
 $("#salva").onclick = async () => {
-  const dati = {auto_invio: $("#i-auto_invio").checked, auto_decisioni: $$(".auto-dec").filter(c => c.checked).map(c => c.value)};
+  const dati = {auto_invio: $("#i-auto_invio").checked, notifiche_suono: $("#i-notifiche_suono").checked, auto_decisioni: $$(".auto-dec").filter(c => c.checked).map(c => c.value)};
   for (const k of CAMPI) dati[k] = NUMERI.includes(k) ? Number($("#i-" + k).value) : $("#i-" + k).value.trim();
   try { const r = await api("/api/impostazioni", dati); toast(r.riavvio ? "Salvate. Riavvia l'assistente per la nuova porta." : "Impostazioni salvate"); impostazioni(); aggiornaStato(); } catch (e) { toast(e.message); }
+};
+$("#prova-notifica").onclick = async () => {
+  await api("/api/notifiche/prova", {});
+  $("#prova-esito").textContent = "Inviata: compare entro qualche secondo. Nel browser, fuori dall'app, non compare.";
 };
 const GRADI = {1: "Grado 1 · aderente", 2: "Grado 2 · lieve-moderato", 3: "Grado 3 · moderato-severo", 4: "Grado 4 · incongruente"};
 async function esempi() {

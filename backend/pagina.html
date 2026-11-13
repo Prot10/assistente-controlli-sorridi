@@ -27,6 +27,14 @@
 .richiesta .esito{border-left:1px solid var(--line)}
 .msg{margin:0 0 8px;white-space:pre-wrap}.msg time{color:var(--faint);font-size:11.5px;margin-right:8px;font-variant-numeric:tabular-nums}
 .foto img{display:block;max-width:100%;max-height:180px;margin:4px 0 8px;border:1px solid var(--line);border-radius:8px;cursor:zoom-in}
+.galleria{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:2px 0 6px}
+.galleria[data-n="1"]{grid-template-columns:minmax(0,200px)}
+.miniatura{position:relative;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--raised);aspect-ratio:3/4;cursor:zoom-in}
+.miniatura img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .2s}
+.miniatura:hover img{transform:scale(1.04)}
+.miniatura b,.n-foto{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--head);color:var(--panel);font-size:11px;font-weight:700}
+.miniatura b{position:absolute;top:6px;left:6px}
+.n-foto{margin-right:6px;vertical-align:1px}
 .etichetta{display:block;margin:14px 0 5px;font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .esito .testa{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .esito .testa .chip{font-size:11.5px;padding:2px 9px}
@@ -79,8 +87,24 @@
 .avanzate{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
 .avanzate summary{cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
 .avanzate .form{margin-top:12px}
-#zoom{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:rgba(4,8,12,.85)}
-#zoom img{max-width:96vw;max-height:94vh;border-radius:8px}
+#visore{position:fixed;inset:0;z-index:60;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:rgba(4,10,16,.94);color:#e8eef3}
+#visore[hidden]{display:none}
+.v-barra{display:flex;align-items:center;gap:6px;padding:10px 14px}
+.v-barra b{font-variant-numeric:tabular-nums;font-size:13px}.v-barra small{color:#9fb0bf;margin-left:8px}
+.v-barra button,.v-freccia{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.06);color:inherit;font:600 12px var(--body,inherit);font-variant-numeric:tabular-nums}
+.v-barra button:hover,.v-freccia:hover{background:rgba(255,255,255,.14)}
+.v-barra button[aria-pressed="true"]{background:#00b295;border-color:#00b295;color:#002c4f}
+.v-barra .sep{width:1px;height:20px;margin:0 4px;background:rgba(255,255,255,.14)}
+.v-palco{position:relative;overflow:hidden;cursor:grab;touch-action:none}
+.v-palco.tira{cursor:grabbing}
+.v-palco img{position:absolute;left:50%;top:50%;max-width:none;user-select:none;transform-origin:center;will-change:transform}
+.v-palco img.contrasto{filter:contrast(1.7) brightness(1.08)}
+.v-freccia{position:absolute;top:50%;width:44px;height:64px;margin-top:-32px;background:rgba(0,0,0,.35)}
+.v-freccia.sx{left:14px}.v-freccia.dx{right:14px}
+.v-strip{display:flex;justify-content:center;gap:6px;padding:10px;overflow-x:auto}
+.v-strip button{flex:0 0 52px;height:52px;padding:0;border:2px solid transparent;border-radius:7px;overflow:hidden;background:none;opacity:.55}
+.v-strip button.on{border-color:#00b295;opacity:1}
+.v-strip img{width:100%;height:100%;object-fit:cover}
 #toast{position:fixed;bottom:18px;left:18px;z-index:70;display:none;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:var(--shadow);color:var(--ink);font-weight:500}
 @media (max-width:900px){
   .shell{grid-template-columns:68px minmax(0,1fr)}
@@ -193,7 +217,15 @@
     </section>
   </main>
 </div>
-<div id="zoom"><img alt=""></div><div id="toast" role="status"></div>
+<div id="visore" hidden role="dialog" aria-modal="true" aria-label="Foto del paziente">
+  <div class="v-barra"><b id="v-conta"></b><small id="v-nota"></small><span class="grow"></span>
+    <button data-v="meno" title="Riduci (−)" aria-label="Riduci"></button><button data-v="adatta" id="v-scala" title="Adatta allo schermo (0)"></button><button data-v="piu" title="Ingrandisci (+)" aria-label="Ingrandisci"></button>
+    <span class="sep"></span><button data-v="contrasto" title="Più contrasto (C)" aria-label="Più contrasto" aria-pressed="false"></button><button data-v="ruota" title="Ruota di 90° (R)" aria-label="Ruota"></button>
+    <span class="sep"></span><button data-v="chiudi" title="Chiudi (Esc)" aria-label="Chiudi"></button></div>
+  <div class="v-palco" id="v-palco"><img id="v-img" alt="" draggable="false">
+    <button class="v-freccia sx" data-v="prima" title="Foto precedente (←)" aria-label="Foto precedente"></button><button class="v-freccia dx" data-v="dopo" title="Foto successiva (→)" aria-label="Foto successiva"></button></div>
+  <div class="v-strip" id="v-strip"></div>
+</div><div id="toast" role="status"></div>
 <script type="module">
 import {menus, conferma} from "/statico/componenti.js";
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -214,6 +246,12 @@ const ICONA = {
   robot: '<rect width="16" height="12" x="4" y="8" rx="2"/><path d="M12 8V4H8"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   giro: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  sinistra: '<path d="m15 18-6-6 6-6"/>',
+  destra: '<path d="m9 18 6-6-6-6"/>',
+  piu: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/>',
+  meno: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/>',
+  contrasto: '<circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/>',
+  ruota: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
 };
 const svg = (n, s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONA[n]}</svg>`;
 let stato = {}, filtro = "da_approvare", contatto = null, vista = "richieste";
@@ -261,11 +299,13 @@ async function richieste() {
 
 function card(r) {
   const nome = esc(r.nome || r.username || r.wa_id || r.contatto), [st, tono] = STATO[r.stato];
-  const msgs = r.messaggi.map(m => `${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente" loading="lazy"></div>` : ""}
-    ${m.foto_errore ? `<div class="notice stop">Foto non scaricata: ${esc(m.foto_errore)}</div>` : ""}
-    <p class="msg"><time>${ora(m.quando)}</time>${esc(m.testo)}</p>`).join("");
+  // Le foto sono numerate come le vede il modello ("immagine 1", "immagine 2"…), così il motivo si ritrova.
+  const foto = r.messaggi.filter(m => m.foto), n = m => foto.indexOf(m) + 1;
+  const galleria = foto.length ? `<div class="galleria" data-n="${foto.length}">${foto.map(m => `<button class="miniatura" type="button" title="Ingrandisci la foto ${n(m)}"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto ${n(m)} del paziente" data-nota="${ora(m.quando)}" loading="lazy"><b>${n(m)}</b></button>`).join("")}</div>` : "";
+  const msgs = r.messaggi.map(m => `${m.foto_errore ? `<div class="notice stop">Foto non scaricata: ${esc(m.foto_errore)}</div>` : ""}
+    ${m.foto || m.testo ? `<p class="msg"><time>${ora(m.quando)}</time>${m.foto ? `<span class="n-foto" title="Foto ${n(m)}">${n(m)}</span>` : ""}${m.foto && !m.testo ? `<span class="meta">foto</span>` : esc(m.testo)}</p>` : ""}`).join("");
   return `<header><span class="avatar">${esc(iniziali(r.nome))}</span><h2>${nome}</h2><small>${r.wa_id ? "+" + esc(r.wa_id) : ""} · richiesta ${r.id}</small><span class="grow"></span><span class="chip ${tono}">${st}</span></header>
-    <div class="msgs">${msgs}</div><div class="esito">${esito(r)}</div>`;
+    <div class="msgs">${galleria}${msgs}</div><div class="esito">${esito(r)}</div>`;
 }
 
 function esito(r) {
@@ -289,7 +329,8 @@ function esito(r) {
 }
 
 $("#richieste").onclick = async ev => {
-  if (ev.target.matches(".foto img")) return zoom(ev.target.src);
+  const mini = ev.target.closest(".miniatura");
+  if (mini) { const tutte = [...mini.parentNode.children]; return apriFoto(tutte.map(x => x.querySelector("img")), tutte.indexOf(mini)); }
   const b = ev.target.closest("[data-az]"); if (!b) return;
   const c = b.closest(".richiesta"), id = c.id.slice(1), val = k => c.querySelector(`[data-c=${k}]`)?.value;
   b.disabled = true;
@@ -313,12 +354,12 @@ async function filo() {
   $("#scrivi").hidden = false;
   if (b.dataset.firma === firma) return;
   b.dataset.firma = firma;
-  b.innerHTML = l.map(m => `<div class="bolla ${m.direzione}">${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente"></div>` : ""}${esc(m.testo)}
+  b.innerHTML = l.map(m => `<div class="bolla ${m.direzione}">${m.foto ? `<div class="foto"><img src="/api/foto/${encodeURIComponent(m.id)}" alt="foto del paziente" data-nota="${ora(m.quando)}"></div>` : ""}${esc(m.testo)}
     <small>${ora(m.quando)}${m.direzione === "out" ? ` · ${esc(m.operatore || "")} · ${SPUNTE[m.stato] || esc(m.stato)}${m.errore ? " · " + esc(m.errore) : ""}` : ""}</small></div>`).join("");
   if (giu) b.scrollTop = b.scrollHeight;
 }
 $("#contatti").onclick = e => { const c = e.target.closest(".contatto"); if (!c) return; contatto = c.dataset.id; $$(".contatto").forEach(x => x.classList.toggle("on", x === c)); filo().then(() => $("#bolle").scrollTop = 1e9); };
-$("#bolle").onclick = e => { if (e.target.matches(".foto img")) zoom(e.target.src); };
+$("#bolle").onclick = e => { if (e.target.matches(".foto img")) { const tutte = $$("#bolle .foto img"); apriFoto(tutte, tutte.indexOf(e.target)); } };
 $("#manda-libero").onclick = async () => {
   const t = $("#testo-libero").value.trim(); if (!t) return;
   try { await api(`/api/contatti/${encodeURIComponent(contatto)}/invia`, {testo: t}); $("#testo-libero").value = ""; filo(); } catch (e) { toast(e.message); }
@@ -469,9 +510,65 @@ $("#accedi-codice").onclick = () => accedi(true);
 $("#esci").onclick = async () => { if (await conferma("Scollegare ChatGPT?", "L'assistente non potrà valutare i messaggi finché qualcuno non accede di nuovo.", "Esci", "danger")) { await api("/api/codex/esci", {}); aggiornaStato(true); } };
 
 // ---------------------------------------------------------------- cornice
-function zoom(src) { $("#zoom img").src = src; $("#zoom").style.display = "grid"; }
-$("#zoom").onclick = () => $("#zoom").style.display = "none";
-document.onkeydown = e => { if (e.key === "Escape") $("#zoom").style.display = "none"; };
+// Visore delle foto: frecce tra le foto, zoom con rotella o pizzico verso il puntatore, trascinamento,
+// doppio clic per ingrandire/adattare, contrasto e rotazione per ricontrollare l'aria tra allineatore e denti.
+const V = {lista: [], i: 0, s: 1, adatta: 1, x: 0, y: 0, r: 0, da: null};
+const vImg = $("#v-img"), vPalco = $("#v-palco");
+$$("#visore [data-v]").forEach(b => { const ic = {meno: "meno", piu: "piu", contrasto: "contrasto", ruota: "ruota", chiudi: "x", prima: "sinistra", dopo: "destra"}[b.dataset.v]; if (ic) b.innerHTML = svg(ic, b.dataset.v === "prima" || b.dataset.v === "dopo" ? 26 : 16); });
+function apriFoto(imgs, i) {
+  V.lista = imgs.map(im => ({src: im.src, nota: im.dataset.nota || ""})); V.da = document.activeElement;
+  $("#v-strip").innerHTML = V.lista.length > 1 ? V.lista.map((f, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="${f.src}" alt=""></button>`).join("") : "";
+  $$(".v-freccia").forEach(b => b.hidden = V.lista.length < 2);
+  $("#visore").hidden = false; vaiFoto(i); $('#visore [data-v="chiudi"]').focus();
+}
+function vaiFoto(i) {
+  V.i = (i + V.lista.length) % V.lista.length; V.r = 0;
+  const f = V.lista[V.i];
+  $("#v-conta").textContent = V.lista.length > 1 ? `Foto ${V.i + 1} di ${V.lista.length}` : "Foto";
+  $("#v-nota").textContent = f.nota;
+  $$("#v-strip button").forEach((b, k) => b.classList.toggle("on", k === V.i));
+  vImg.onload = () => adatta(); vImg.src = f.src; if (vImg.complete && vImg.naturalWidth) adatta();
+}
+function adatta() {
+  const w = vImg.naturalWidth, h = vImg.naturalHeight, giro = V.r % 180 !== 0;
+  V.adatta = Math.min(vPalco.clientWidth * .94 / (giro ? h : w), vPalco.clientHeight * .94 / (giro ? w : h));
+  V.s = V.adatta; V.x = V.y = 0; disegna();
+}
+function disegna() {
+  vImg.style.transform = `translate(-50%,-50%) translate(${V.x}px,${V.y}px) rotate(${V.r}deg) scale(${V.s})`;
+  $("#v-scala").textContent = Math.round(V.s * 100) + "%";
+}
+function scala(f, cx = 0, cy = 0) {  // cx, cy: punto fermo, rispetto al centro del palco
+  const s = Math.min(Math.max(V.s * f, V.adatta), Math.max(V.adatta * 16, 4));
+  if (s === V.adatta) V.x = V.y = 0; else { V.x = cx - (cx - V.x) * s / V.s; V.y = cy - (cy - V.y) * s / V.s; }
+  V.s = s; disegna();
+}
+const centro = e => { const b = vPalco.getBoundingClientRect(); return [e.clientX - b.left - b.width / 2, e.clientY - b.top - b.height / 2]; };
+function chiudiFoto() { $("#visore").hidden = true; vImg.removeAttribute("src"); V.da?.focus?.(); }
+function comando(v) {
+  if (v === "chiudi") chiudiFoto();
+  if (v === "prima" || v === "dopo") vaiFoto(V.i + (v === "dopo" ? 1 : -1));
+  if (v === "piu" || v === "meno") scala(v === "piu" ? 1.5 : 1 / 1.5);
+  if (v === "adatta") adatta();
+  if (v === "ruota") { V.r = (V.r + 90) % 360; adatta(); }
+  if (v === "contrasto") { const b = $('#visore [data-v="contrasto"]'); b.setAttribute("aria-pressed", String(vImg.classList.toggle("contrasto"))); }
+}
+$("#visore").onclick = e => { const b = e.target.closest("[data-v]"); if (b) return comando(b.dataset.v); const k = e.target.closest("[data-k]"); if (k) vaiFoto(+k.dataset.k); };
+vPalco.onwheel = e => { e.preventDefault(); scala(Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)), ...centro(e)); };
+vPalco.ondblclick = e => { if (!e.target.closest("button")) V.s > V.adatta * 1.05 ? adatta() : scala(3, ...centro(e)); };
+vPalco.onpointerdown = e => {
+  if (e.target.closest("button") || e.button !== 0) return;
+  const x0 = e.clientX - V.x, y0 = e.clientY - V.y;
+  vPalco.setPointerCapture(e.pointerId); vPalco.classList.add("tira");
+  vPalco.onpointermove = m => { V.x = m.clientX - x0; V.y = m.clientY - y0; disegna(); };
+  vPalco.onpointerup = vPalco.onpointercancel = () => { vPalco.onpointermove = null; vPalco.classList.remove("tira"); };
+};
+addEventListener("resize", () => { if (!$("#visore").hidden && V.s === V.adatta) adatta(); });
+document.onkeydown = e => {
+  if ($("#visore").hidden) return;
+  const v = {Escape: "chiudi", ArrowLeft: "prima", ArrowRight: "dopo", "+": "piu", "=": "piu", "-": "meno", "0": "adatta", c: "contrasto", r: "ruota"}[e.key];
+  if (v && !e.metaKey && !e.ctrlKey) { e.preventDefault(); if ((v === "prima" || v === "dopo") && V.lista.length < 2) return; comando(v); }
+};
 function mostra() {
   vista = location.hash.slice(1); if (!document.getElementById("v-" + vista)) vista = "richieste";
   $$(".side-item").forEach(a => a.classList.toggle("on", a.dataset.vista === vista));

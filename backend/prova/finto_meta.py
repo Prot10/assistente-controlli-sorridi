@@ -7,6 +7,7 @@ webhook firmati come farebbe Meta, compresi gli stati di consegna.
     python prova/finto_meta.py serve --segreto PROVA
     python prova/finto_meta.py pannello --url https://.../webhook --verifica TOKEN   # il webhook messo a mano nel pannello Meta
     python prova/finto_meta.py manda --nome "Paziente Prova" --numero 390000000001 --testo "Ecco la foto" --foto foto.jpg
+    python prova/finto_meta.py manda --foto a.jpg b.jpg c.jpg d.jpg --documento   # più foto insieme, come documento
 
 Nell'assistente: base API http://127.0.0.1:8399, app secret uguale a --segreto, token qualsiasi.
 Il numero parte non registrato e l'app senza webhook nel pannello, come un account appena creato.
@@ -17,6 +18,8 @@ Webhook messaggi: quello indicato a Meta (override, poi pannello), altrimenti --
 """
 
 import argparse
+import base64
+import os
 import hashlib
 import hmac
 import json
@@ -175,18 +178,41 @@ def serve(a):
     ThreadingHTTPServer(("127.0.0.1", PORTA), H).serve_forever()
 
 
+def wamid():
+    # Come quelli veri: base64 di un protobuf, quindi con = finali e a volte + e /. Il 13 Nov 2026 gli id con =
+    # davano 404 sulle foto nella pagina; con gli id esadecimali di prima la prova non lo vedeva.
+    while True:
+        b = base64.b64encode(os.urandom(28)).decode()
+        if "+" in b or "/" in b:
+            return "wamid.HBgM" + b
+
+
 def manda(a):
-    messaggio = {"from": a.numero, "from_user_id": f"IT.{a.numero}", "id": "wamid.IN" + uuid.uuid4().hex[:12],
-                 "timestamp": str(int(time.time()))}
-    if a.foto:
-        req = urllib.request.Request(f"http://127.0.0.1:{PORTA}/_carica", data=Path(a.foto).read_bytes())
-        mid = json.loads(urllib.request.urlopen(req).read())["id"]
-        messaggio.update(type="image", image={"id": mid, "mime_type": "image/jpeg", "caption": a.testo or ""})
-    else:
-        messaggio.update(type="text", text={"body": a.testo})
     contatto = {"profile": {"name": a.nome}, "wa_id": a.numero, "user_id": f"IT.{a.numero}"}
     dove = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{PORTA}/_destinazione").read())["url"]
-    print(dove, webhook(dove, a.segreto, {"contacts": [contatto], "messages": [messaggio]}))
+
+    def uno(foto=None, testo=""):
+        messaggio = {"from": a.numero, "from_user_id": f"IT.{a.numero}", "id": wamid(), "timestamp": str(int(time.time()))}
+        if foto:
+            req = urllib.request.Request(f"http://127.0.0.1:{PORTA}/_carica", data=Path(foto).read_bytes())
+            mid = json.loads(urllib.request.urlopen(req).read())["id"]
+            if a.documento:  # dal PC la foto parte spesso come documento
+                messaggio.update(type="document", document={"id": mid, "mime_type": "image/jpeg", "filename": Path(foto).name,
+                                                            "caption": testo})
+            else:
+                messaggio.update(type="image", image={"id": mid, "mime_type": "image/jpeg", "caption": testo})
+        else:
+            messaggio.update(type="text", text={"body": testo})
+        print(dove, webhook(dove, a.segreto, {"contacts": [contatto], "messages": [messaggio]}))
+
+    if not a.foto:
+        return uno(testo=a.testo)
+    # Più foto mandate insieme: WhatsApp le consegna in webhook separati, quasi nello stesso istante.
+    fili = [threading.Thread(target=uno, args=(f, a.testo if i == 0 else "")) for i, f in enumerate(a.foto)]
+    for f in fili:
+        f.start()
+    for f in fili:
+        f.join()
 
 
 def pannello(a):
@@ -202,7 +228,8 @@ def main():
     ap.add_argument("--nome", default="Paziente Prova")
     ap.add_argument("--numero", default="390000000001")
     ap.add_argument("--testo", default="")
-    ap.add_argument("--foto")
+    ap.add_argument("--foto", nargs="+", help="una o più foto, mandate insieme")
+    ap.add_argument("--documento", action="store_true", help="manda le foto come documento, come dal PC")
     ap.add_argument("--url")
     ap.add_argument("--verifica")
     ap.add_argument("--come-sorridi", action="store_true", help="token senza account nei permessi e un account già usato da Brevo")

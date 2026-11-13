@@ -47,6 +47,8 @@ Aprite **Impostazioni → WhatsApp Business** e seguite i cinque passaggi. Ognun
 
 1. **Token e app secret**: incollateli e premete **Verifica**. L'assistente controlla che il token non scada, che abbia i due permessi e che il secret sia quello dell'app.
 2. **Numero**: compaiono i numeri dell'account. Se ce n'è uno solo, viene scelto da solo.
+   - Con un utente di sistema **Amministratore** Meta spesso non dice al token quali account WhatsApp può usare. Allora l'app chiede l'**ID dell'account WhatsApp**: business.facebook.com → **Impostazioni → Account → Account di messaggistica**, aprite l'account del numero per i controlli e copiate l'ID sotto il nome. Incollatelo e premete **Cerca i numeri**.
+   - Un numero che un'altra app usa già (per esempio Brevo per le campagne) compare grigio e non si può scegliere: usarlo per l'assistente disturberebbe l'altro servizio.
 3. **Attivazione del numero**: il numero va attivato sulla Cloud API una volta sola con un **PIN di 6 cifre**. Se il numero ha già la verifica in due passaggi usate quel PIN, altrimenti sceglietene uno e conservatelo con le altre credenziali.
 4. **Ricezione dei messaggi**: l'assistente apre da solo un tunnel sicuro (Cloudflare) e mostra due valori, l'**URL di callback** e il **token di verifica**. **Una volta sola**:
    1. Su developers.facebook.com, nell'app, andate su **WhatsApp → Configurazione**. Nelle app nuove la voce è in **Casi d'uso → Personalizza → Configurazione**.

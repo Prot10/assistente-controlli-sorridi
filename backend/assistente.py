@@ -233,7 +233,8 @@ class Assistente:
             self.meta = {"errore": str(e)}
             return self.meta
         scelta = {"wa_app_id": m["app"]["id"] or ""}
-        numeri = [(w["id"], n["id"]) for w in m["wabas"] for n in w["numeri"]]
+        # un numero di un account che un'altra app usa già (per esempio Brevo) non si sceglie mai da solo
+        numeri = [(w["id"], n["id"]) for w in m["wabas"] if not w["altre_app"] for n in w["numeri"]]
         if len(numeri) == 1 and not imp["wa_phone_number_id"]:
             scelta.update(wa_waba_id=numeri[0][0], wa_phone_number_id=numeri[0][1])
         self.a.salva_impostazioni(scelta)
@@ -250,7 +251,8 @@ class Assistente:
             if not url:
                 return
             r["raggiungibile"] = raggiungibile(r["url"], imp["wa_verify_token"])
-            if imp["wa_token"] and imp["wa_waba_id"]:
+            # Solo con un numero scelto: un ID scritto a mano può essere un account di un'altra app (Brevo).
+            if imp["wa_token"] and imp["wa_waba_id"] and imp["wa_phone_number_id"]:
                 # Anche se la prova da qui non passa: è la verifica di Meta a contare.
                 try:
                     self.cloud().indirizza(imp["wa_waba_id"], r["url"], imp["wa_verify_token"])
@@ -402,7 +404,20 @@ def gestore_pagina(app, porta):
                     if not app.tunnel.url or "wa_token" in nuove:
                         app.avvia_tunnel()
                     return self._json(app.vista_whatsapp())
+                if parti == ["api", "whatsapp", "account"]:
+                    waba = str(corpo.get("waba", "")).strip()
+                    if not re.fullmatch(r"\d{6,20}", waba):
+                        raise ValueError("l'ID dell'account WhatsApp è fatto solo di cifre")
+                    if waba != a.impostazioni()["wa_waba_id"]:
+                        a.salva_impostazioni({"wa_waba_id": waba, "wa_phone_number_id": ""})
+                    app.scopri()
+                    if app.tunnel.url and a.impostazioni()["wa_phone_number_id"]:  # numero scelto da solo
+                        threading.Thread(target=app.collega, args=(app.tunnel.url,), daemon=True).start()
+                    return self._json(app.vista_whatsapp())
                 if parti == ["api", "whatsapp", "numero"]:
+                    conto = next((w for w in (app.meta or {}).get("wabas", []) if w["id"] == corpo["waba"]), None)
+                    if conto and conto["altre_app"]:
+                        raise ValueError(f"questo numero è già usato da {', '.join(conto['altre_app'])}: sceglierne un altro")
                     a.salva_impostazioni({"wa_waba_id": corpo["waba"], "wa_phone_number_id": corpo["numero"]})
                     threading.Thread(target=app.collega, args=(app.tunnel.url,), daemon=True).start()
                     return self._json(app.vista_whatsapp())

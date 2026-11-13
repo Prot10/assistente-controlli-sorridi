@@ -28,7 +28,7 @@
 
 **Nell'assistente** (Impostazioni → WhatsApp Business): cinque passaggi, ognuno diventa verde quando Meta conferma.
 1. Incollate **token** e **app secret**, poi premete **Verifica**.
-2. Scegliete il **numero**.
+2. Scegliete il **numero**. Se l'app chiede l'**ID dell'account WhatsApp**, lo trovate su business.facebook.com → Impostazioni → Account → Account di messaggistica, sotto il nome dell'account.
 3. **Attivate** il numero con un PIN di 6 cifre.
 4. **Ricezione**: copiate URL e token di verifica in Meta → WhatsApp → Configurazione → Webhook, poi attivate il campo **messages**. Va fatto una volta sola, poi l'app si aggiorna da sola.
 5. **Prova**: scrivete al numero da un altro telefono. Il messaggio compare in Richieste.

@@ -10,6 +10,9 @@ webhook firmati come farebbe Meta, compresi gli stati di consegna.
 
 Nell'assistente: base API http://127.0.0.1:8399, app secret uguale a --segreto, token qualsiasi.
 Il numero parte non registrato e l'app senza webhook nel pannello, come un account appena creato.
+Con --come-sorridi il token è quello di un utente di sistema amministratore: i permessi non
+elencano gli account (niente target_ids), e c'è un secondo account con un numero già usato da
+Brevo, come nel portfolio di Sorridi il 13 novembre 2026.
 Webhook messaggi: quello indicato a Meta (override, poi pannello), altrimenti --webhook.
 """
 
@@ -28,7 +31,8 @@ from pathlib import Path
 PORTA = 8399
 FOTO = {}
 INVIATI = []
-APP, WABA, NUMERO = "APP-PROVA", "WABA-PROVA", "NUMERO-PROVA"
+APP, WABA, NUMERO = "APP-PROVA", "100000000000001", "NUMERO-PROVA"  # gli ID degli account sono numeri, come su Meta
+BREVO, NUMERO_BREVO = "100000000000002", "NUMERO-BREVO"
 CONTO = {"registrato": False, "pannello": None, "override": None}
 
 
@@ -56,7 +60,7 @@ def destinazione(a):
 
 def webhook(url, segreto, valore):
     corpo = json.dumps({"object": "whatsapp_business_account",
-                        "entry": [{"id": "WABA-PROVA", "changes": [{"field": "messages", "value": {
+                        "entry": [{"id": WABA, "changes": [{"field": "messages", "value": {
                             "messaging_product": "whatsapp",
                             "metadata": {"display_phone_number": "390000000000", "phone_number_id": "NUMERO-PROVA"},
                             **valore}}]}]}).encode()
@@ -84,8 +88,19 @@ def serve(a):
                 return self._json({"data": {"app_id": APP, "application": "Assistente Sorridi (prova)", "type": "SYSTEM_USER",
                                             "is_valid": True, "expires_at": 0,
                                             "scopes": ["whatsapp_business_messaging", "whatsapp_business_management"],
-                                            "granular_scopes": [{"scope": "whatsapp_business_messaging", "target_ids": [WABA]},
-                                                                {"scope": "whatsapp_business_management", "target_ids": [WABA]}]}})
+                                            "granular_scopes": [{"scope": s} if a.come_sorridi else {"scope": s, "target_ids": [WABA]}
+                                                                for s in ("whatsapp_business_messaging", "whatsapp_business_management")]}})
+            if p[1:] in (["me", "assigned_whatsapp_business_accounts"],):
+                return self._json({"data": [] if a.come_sorridi else [{"id": WABA}]})
+            if p[1:] == ["me", "businesses"]:
+                return self._json({"error": {"code": 100, "message": "(#100) Missing Permission"}}, 400)
+            if a.come_sorridi and p[1:] == [BREVO]:
+                return self._json({"id": BREVO, "name": "Sorridi SRL"})
+            if a.come_sorridi and p[1:] == [BREVO, "phone_numbers"]:
+                return self._json({"data": [{"id": NUMERO_BREVO, "display_phone_number": "+39 000 000 0099", "verified_name": "Sorridi",
+                                             "name_status": "APPROVED", "status": "CONNECTED", "platform_type": "CLOUD_API"}]})
+            if a.come_sorridi and p[1:] == [BREVO, "subscribed_apps"]:
+                return self._json({"data": [{"whatsapp_business_api_data": {"id": "APP-BREVO", "name": "Brevo"}}]})
             if p[1:] == [APP, "subscriptions"]:
                 if token != f"{APP}|{a.segreto}":
                     return self._json({"error": {"code": 190, "message": "Invalid OAuth access token"}}, 400)
@@ -190,6 +205,7 @@ def main():
     ap.add_argument("--foto")
     ap.add_argument("--url")
     ap.add_argument("--verifica")
+    ap.add_argument("--come-sorridi", action="store_true", help="token senza account nei permessi e un account già usato da Brevo")
     a = ap.parse_args()
     {"serve": serve, "manda": manda, "pannello": pannello}[a.comando](a)
 

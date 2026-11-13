@@ -94,7 +94,12 @@ class Cloud:
 
     # ------------------------------------------------------------ configurazione guidata
     def scopri(self, segreto, app_id="", waba_id=""):
-        """Dal solo token: app, permessi, scadenza, account WhatsApp e numeri. Con l'app secret, anche il webhook dell'app."""
+        """Dal solo token: app, permessi, scadenza, account WhatsApp e numeri. Con l'app secret, anche il webhook dell'app.
+
+        Gli account si leggono dai permessi del token. Con un utente di sistema amministratore Meta
+        può lasciarli fuori (permessi senza `target_ids`): allora si prova a chiederli all'utente e
+        all'azienda, e resta sempre l'ID scritto a mano (`waba_id`).
+        """
         d = self._chiama(f"{self.base}/debug_token?input_token={quote(self.token)}")["data"]
         if not d.get("is_valid"):
             raise ErroreWhatsApp("il token non è valido o è scaduto")
@@ -102,13 +107,24 @@ class Cloud:
         info = {"app": {"id": app_id, "nome": d.get("application")}, "tipo": d.get("type"),
                 "scade": d.get("expires_at") or 0, "mancano": sorted(PERMESSI - set(d.get("scopes", []))), "wabas": []}
         wabas = {t for g in d.get("granular_scopes", []) if g.get("scope") in PERMESSI for t in g.get("target_ids", [])}
+        info["dal_token"] = bool(wabas)
+        if not wabas:
+            wabas = self._wabas_raggiungibili()
         for w in sorted(wabas | ({waba_id} if waba_id else set())):
-            iscritte = self._chiama(f"{self.base}/{w}/subscribed_apps").get("data", [])
+            try:
+                iscritte = self._chiama(f"{self.base}/{w}/subscribed_apps").get("data", [])
+                nome = self._chiama(f"{self.base}/{w}?fields=name").get("name")
+                numeri = self._chiama(f"{self.base}/{w}/phone_numbers?fields={CAMPI_NUMERO}").get("data", [])
+            except ErroreWhatsApp as e:
+                info["wabas"].append({"id": w, "errore": str(e), "numeri": [], "altre_app": []})
+                continue
             nostra = next((a for a in iscritte if a.get("whatsapp_business_api_data", {}).get("id") == app_id), None)
+            altre = [a.get("whatsapp_business_api_data", {}) for a in iscritte if a is not nostra]
             info["wabas"].append({
-                "id": w, "nome": self._chiama(f"{self.base}/{w}?fields=name").get("name"),
-                "numeri": self._chiama(f"{self.base}/{w}/phone_numbers?fields={CAMPI_NUMERO}").get("data", []),
-                "app_iscritta": nostra is not None, "indirizzo": (nostra or {}).get("override_callback_uri")})
+                "id": w, "nome": nome, "numeri": numeri,
+                "app_iscritta": nostra is not None, "indirizzo": (nostra or {}).get("override_callback_uri"),
+                # un'altra app (per esempio un fornitore di invii) riceve già i messaggi di questo account
+                "altre_app": [a.get("name") or a.get("id") or "un'altra app" for a in altre]})
         info["segreto_ok"] = info["webhook_app"] = None
         if segreto and app_id:
             # Il token dell'app (id|secret) funziona solo se il secret è giusto: è anche la prova del secret.
@@ -121,6 +137,21 @@ class Cloud:
             except ErroreWhatsApp as e:
                 info["segreto_ok"], info["errore_segreto"] = False, str(e)
         return info
+
+    def _wabas_raggiungibili(self):
+        """Gli account WhatsApp assegnati all'utente del token o dell'azienda, se Meta lo permette."""
+        trovati = set()
+        try:
+            trovati |= {w["id"] for w in self._chiama(f"{self.base}/me/assigned_whatsapp_business_accounts?fields=id").get("data", [])}
+        except ErroreWhatsApp:
+            pass
+        try:  # serve il permesso business_management, che il token di solito non ha
+            for b in self._chiama(f"{self.base}/me/businesses?fields=id").get("data", []):
+                for lato in ("owned_whatsapp_business_accounts", "client_whatsapp_business_accounts"):
+                    trovati |= {w["id"] for w in self._chiama(f"{self.base}/{b['id']}/{lato}?fields=id").get("data", [])}
+        except ErroreWhatsApp:
+            pass
+        return trovati
 
     def registra(self, pin):
         """Attiva il numero sulla Cloud API. Il PIN è quello della verifica in due passaggi (se manca, lo imposta)."""

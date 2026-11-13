@@ -73,6 +73,9 @@
 .numeri{display:grid;gap:6px}
 .numeri label{display:flex;gap:10px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
 .numeri label small{color:var(--muted)}
+.numeri label.occupato{opacity:.6;cursor:not-allowed}
+.altro-conto{margin-top:10px}
+.altro-conto summary{cursor:pointer;color:var(--muted);font-size:13px}
 .avanzate{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
 .avanzate summary{cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
 .avanzate .form{margin-top:12px}
@@ -386,14 +389,23 @@ async function whatsapp() {
     riga(m.segreto_ok, !w.segreto ? "manca l'app secret" : m.segreto_ok ? "app secret corretto" : "l'app secret non corrisponde all'app del token")].join("");
   passo(1, m.app && !m.scade && !m.mancano.length && m.segreto_ok ? "ok" : w.token ? "warn" : "", t1);
   // 2 · numero
-  const numeri = (m.wabas || []).flatMap(x => x.numeri.map(n => ({...n, waba: x.id, account: x.nome})));
-  passo(2, num ? "ok" : numeri.length || m.app ? "warn" : "", !m.app ? `<p class="meta">Dopo la verifica del token compaiono qui i numeri dell'account.</p>`
-    : !numeri.length ? `<p class="meta">Il token non vede nessun numero. Nel Business Manager assegna l'account WhatsApp all'utente di sistema (guida, passo 4), poi premi di nuovo Verifica.</p>`
-    : `<div class="numeri">${numeri.map(n => `<label><input type="radio" name="w-numero" value="${esc(n.waba)}|${esc(n.id)}" ${n.id === w.wa_phone_number_id ? "checked" : ""}><span><b>${esc(n.verified_name)}</b> ${esc(n.display_phone_number)}<br><small>${esc(n.account)} · ${NOME_STATO[n.name_status] || esc(n.name_status || "")}</small></span></label>`).join("")}</div>`);
+  const conti = m.wabas || [];
+  const numeri = conti.flatMap(x => x.numeri.map(n => ({...n, waba: x.id, account: x.nome, altre: x.altre_app || []})));
+  const campoId = `<div class="azioni"><input class="input" id="w-waba" inputmode="numeric" autocomplete="off" placeholder="ID dell'account WhatsApp" value="${esc(w.wa_waba_id || "")}" style="width:230px"><button class="btn ${numeri.length ? "soft sm" : "primary"}" id="w-cerca">Cerca i numeri</button></div>`;
+  const doveId = `Lo trovate su business.facebook.com → Impostazioni → Account → <b>Account di messaggistica</b>: aprite l'account del numero per i controlli, l'ID è sotto il nome.`;
+  const avvisi = conti.map(x => x.errore ? riga(false, `l'account ${esc(x.id)} non si legge con questo token (${esc(x.errore)}): controllate l'ID e che sia assegnato all'utente di sistema`)
+    : !x.numeri.length ? riga(false, `l'account «${esc(x.nome || x.id)}» non ha ancora numeri: aggiungetelo su Meta (guida, passo 2) e premete di nuovo Cerca i numeri`) : "").join("");
+  const elenco = numeri.length ? `<div class="numeri">${numeri.map(n => `<label${n.altre.length ? ` class="occupato"` : ""}><input type="radio" name="w-numero" value="${esc(n.waba)}|${esc(n.id)}" ${n.id === w.wa_phone_number_id ? "checked" : ""} ${n.altre.length ? "disabled" : ""}><span><b>${esc(n.verified_name)}</b> ${esc(n.display_phone_number)}<br><small>${n.altre.length ? `già usato da ${esc(n.altre.join(", "))}: non si può scegliere` : `${esc(n.account || n.waba)} · ${NOME_STATO[n.name_status] || esc(n.name_status || "")}`}</small></span></label>`).join("")}</div>` : "";
+  let t2;
+  if (!m.app) t2 = `<p class="meta">Dopo la verifica del token compaiono qui i numeri dell'account.</p>`;
+  else if (!conti.length) t2 = `<p class="meta">Meta non dice a questo token quali account WhatsApp può usare (capita con gli utenti di sistema amministratori). Scrivete qui l'ID dell'account WhatsApp. ${doveId}</p>${campoId}`;
+  else if (!numeri.some(n => !n.altre.length) || conti.some(x => x.errore)) t2 = `${avvisi ? `<div class="esito-wa">${avvisi}</div>` : ""}${elenco}<p class="meta" style="margin-top:10px">${doveId}</p>${campoId}`;
+  else t2 = `${avvisi ? `<div class="esito-wa">${avvisi}</div>` : ""}${elenco}${num ? "" : `<p class="meta" style="margin-top:8px">Scegliete il numero dedicato ai controlli.</p>`}<details class="altro-conto"><summary>Il numero è in un altro account WhatsApp?</summary><p class="meta">${doveId}</p>${campoId}</details>`;
+  passo(2, num ? "ok" : m.app ? "warn" : "", t2);
   // 3 · registrazione sulla Cloud API
   const attivo = num && num.platform_type === "CLOUD_API";
   passo(3, attivo ? "ok" : num ? "warn" : "", !num ? `<p class="meta">Scegli prima il numero.</p>` : attivo ? `<div class="esito-wa">${riga(true, `numero attivo sulla Cloud API (${esc(num.status)})`)}</div>`
-    : `<p class="meta">Il numero va attivato una volta sola. Serve il PIN di 6 cifre della verifica in due passaggi: se il numero ne ha già uno usate quello, altrimenti sceglietene uno nuovo e conservatelo con le altre credenziali.</p>`);
+    : `<p class="meta">Il numero va attivato una volta sola. Serve il PIN di 6 cifre della verifica in due passaggi: se il numero ne ha già uno usate quello, altrimenti sceglietene uno nuovo e conservatelo con le altre credenziali.${num.name_status && num.name_status !== "APPROVED" ? ` Meta però sta ancora rivedendo il nome visualizzato (${NOME_STATO[num.name_status] || esc(num.name_status)}): se l'attivazione dà errore, aspettate l'approvazione e riprovate.` : ""}</p>`);
   $("#w3-pin").hidden = !num || attivo;
   // 4 · ricezione: tunnel, pannello Meta, indirizzo comunicato a Meta
   const pannello = m.segreto_ok ? Boolean(m.webhook_app && m.webhook_app.messages) : null, auto = w.tunnel === "automatico";
@@ -423,6 +435,12 @@ $("#w-verifica").onclick = async () => {
   await azioneWA("/api/whatsapp/verifica", {wa_token: $("#w-token").value, wa_app_secret: $("#w-segreto").value});
   $("#w-token").value = $("#w-segreto").value = "";
 };
+$("#v-impostazioni").addEventListener("click", e => {
+  if (e.target.id !== "w-cerca") return;
+  $("#w2").dataset.html = "";
+  azioneWA("/api/whatsapp/account", {waba: $("#w-waba").value.trim()});
+});
+$("#v-impostazioni").addEventListener("keydown", e => { if (e.target.id === "w-waba" && e.key === "Enter") $("#w-cerca").click(); });
 $("#w-registra").onclick = () => azioneWA("/api/whatsapp/registra", {pin: $("#w-pin").value.trim()}, "Numero attivato");
 $("#v-impostazioni").addEventListener("change", e => {
   if (e.target.name !== "w-numero") return;
